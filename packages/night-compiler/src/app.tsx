@@ -261,9 +261,11 @@ export function DocsApp({ config }: { config: DocsSiteConfig }) {
 
 							<MarkdownView
 								currentDoc={activeDoc}
+								currentSiteId={config.site.id}
 								docsBySource={docsBySource}
 								markdown={bodyMarkdown}
 								onNavigate={navigate}
+								siteLinks={config.site.siteLinks ?? []}
 							/>
 						</article>
 					</main>

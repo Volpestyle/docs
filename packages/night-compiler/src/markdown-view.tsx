@@ -3,7 +3,7 @@ import mermaid from "mermaid";
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 
 import { createSlugger, parseMarkdown } from "./markdown";
-import type { Doc } from "./types";
+import type { Doc, DocsSiteLink } from "./types";
 
 let mermaidRenderSerial = 0;
 
@@ -16,19 +16,30 @@ function readMermaidTheme(): "default" | "dark" {
 
 type MarkdownViewProps = {
 	currentDoc: Doc;
+	currentSiteId: string;
 	docsBySource: Map<string, Doc>;
 	markdown: string;
 	onNavigate: (slug: string, headingId?: string) => void;
+	siteLinks: readonly DocsSiteLink[];
 };
 
 type RenderContext = {
 	currentDoc: Doc;
+	currentSiteId: string;
 	docsBySource: Map<string, Doc>;
 	onNavigate: (slug: string, headingId?: string) => void;
 	slugForHeading: (value: string) => string;
+	siteLinks: readonly DocsSiteLink[];
 };
 
-export function MarkdownView({ currentDoc, docsBySource, markdown, onNavigate }: MarkdownViewProps) {
+export function MarkdownView({
+	currentDoc,
+	currentSiteId,
+	docsBySource,
+	markdown,
+	onNavigate,
+	siteLinks,
+}: MarkdownViewProps) {
 	const tokens = parseMarkdown(markdown);
 	const slugForHeading = createSlugger();
 
@@ -37,9 +48,11 @@ export function MarkdownView({ currentDoc, docsBySource, markdown, onNavigate }:
 			{tokens.map((token, index) =>
 				renderBlockToken(token, `${token.type}-${index}`, {
 					currentDoc,
+					currentSiteId,
 					docsBySource,
 					onNavigate,
 					slugForHeading,
+					siteLinks,
 				}),
 			)}
 		</section>
@@ -182,7 +195,7 @@ function renderInlineToken(token: Token, key: string, context: RenderContext): R
 		}
 		case "image": {
 			const image = token as Tokens.Image;
-			return <img alt={image.text} key={key} src={image.href} title={image.title ?? undefined} />;
+			return <img alt={image.text} key={key} src={markdownAssetUrl(image.href)} title={image.title ?? undefined} />;
 		}
 		case "br":
 			return <br key={key} />;
@@ -293,15 +306,22 @@ type MarkdownLinkProps = {
 
 function MarkdownLink({ children, context, href, title }: MarkdownLinkProps) {
 	const resolved = resolveLocalDocHref(context.currentDoc, context.docsBySource, href);
-	const linkHref = resolved ? `?doc=${resolved.slug}${resolved.headingId ? `#${resolved.headingId}` : ""}` : href;
+	const crossSite = resolved ? undefined : resolveCrossSiteDocHref(href, context.currentSiteId, context.siteLinks);
+	const linkHref = resolved
+		? `?doc=${resolved.slug}${resolved.headingId ? `#${resolved.headingId}` : ""}`
+		: (crossSite?.href ?? href);
 
 	function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-		if (!resolved) {
+		if (resolved) {
+			event.preventDefault();
+			context.onNavigate(resolved.slug, resolved.headingId);
 			return;
 		}
 
-		event.preventDefault();
-		context.onNavigate(resolved.slug, resolved.headingId);
+		if (crossSite?.isCurrentSite) {
+			event.preventDefault();
+			context.onNavigate(crossSite.slug, crossSite.headingId);
+		}
 	}
 
 	return (
@@ -375,6 +395,85 @@ function resolveLocalDocHref(currentDoc: Doc, docsBySource: Map<string, Doc>, hr
 	const doc = candidates.map((candidate) => docsBySource.get(candidate.toLowerCase())).find(Boolean);
 
 	return doc ? { slug: doc.slug, headingId } : undefined;
+}
+
+type CrossSiteDocHref = {
+	headingId?: string;
+	href: string;
+	isCurrentSite: boolean;
+	slug: string;
+};
+
+function resolveCrossSiteDocHref(
+	href: string,
+	currentSiteId: string,
+	siteLinks: readonly DocsSiteLink[],
+): CrossSiteDocHref | undefined {
+	const target = parseDocsProtocolHref(href);
+	if (!target) {
+		return undefined;
+	}
+
+	const siteLink = siteLinks.find((link) => link.id === target.siteId);
+	if (!siteLink) {
+		return undefined;
+	}
+
+	const route = `?doc=${encodeURIComponent(target.slug)}${target.headingId ? `#${encodeURIComponent(target.headingId)}` : ""}`;
+	const resolved: CrossSiteDocHref = {
+		href: target.siteId === currentSiteId ? route : appendDocsRoute(siteLink.href, route),
+		isCurrentSite: target.siteId === currentSiteId,
+		slug: target.slug,
+	};
+	if (target.headingId) {
+		resolved.headingId = target.headingId;
+	}
+	return resolved;
+}
+
+type DocsProtocolHref = {
+	headingId?: string;
+	siteId: string;
+	slug: string;
+};
+
+function parseDocsProtocolHref(href: string): DocsProtocolHref | undefined {
+	const prefix = href.startsWith("docs://") ? "docs://" : href.startsWith("docs:") ? "docs:" : undefined;
+	if (!prefix) {
+		return undefined;
+	}
+
+	const rest = href.slice(prefix.length);
+	const [path = "", rawHash] = rest.split("#", 2);
+	const segments = path.split("/").filter(Boolean).map(decodeURIComponent);
+	const [siteId, slug] = segments;
+	if (!siteId || !slug) {
+		return undefined;
+	}
+
+	const target: DocsProtocolHref = {
+		siteId,
+		slug,
+	};
+	if (rawHash) {
+		target.headingId = decodeURIComponent(rawHash);
+	}
+	return target;
+}
+
+function appendDocsRoute(baseHref: string, route: string) {
+	const withoutHash = baseHref.split("#", 1)[0] ?? baseHref;
+	const query = route.startsWith("?") ? route.slice(1) : route;
+	const separator = withoutHash.includes("?") ? "&" : "?";
+	return `${withoutHash}${separator}${query}`;
+}
+
+function markdownAssetUrl(path: string) {
+	if (/^(?:[a-z]+:|\/\/|#)/i.test(path)) {
+		return path;
+	}
+	const base = import.meta.env.BASE_URL;
+	return path.startsWith("/") ? `${base.replace(/\/$/, "")}${path}` : `${base}${path}`;
 }
 
 function normalizeDocPath(value: string) {
