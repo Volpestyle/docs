@@ -1,1 +1,0 @@
-import{Dn as e,On as t}from"./index-dP2sBbC1.js";var n=(n,r)=>t.lang.round(e.parse(n)[r]);export{n as t};
