@@ -1,6 +1,7 @@
 import {
 	BookOpenTextIcon,
 	CheckIcon,
+	ChevronDownIcon,
 	ClipboardIcon,
 	CornerDownRightIcon,
 	FileTextIcon,
@@ -13,7 +14,7 @@ import {
 	TerminalSquareIcon,
 	XIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
@@ -321,13 +322,15 @@ function MobileNavigation({ config, activeSlug, search, onClose, onNavigate, onO
 						<XIcon data-icon="inline-start" />
 					</Button>
 				</div>
-				<Sidebar
-					config={config}
-					activeSlug={activeSlug}
-					search={search}
-					onNavigate={onNavigate}
-					onOpenSearch={onOpenSearch}
-				/>
+				<div className="min-h-0 flex-1">
+					<Sidebar
+						config={config}
+						activeSlug={activeSlug}
+						search={search}
+						onNavigate={onNavigate}
+						onOpenSearch={onOpenSearch}
+					/>
+				</div>
 			</div>
 		</div>
 	);
@@ -571,28 +574,44 @@ function Sidebar({ config, activeSlug, search, onNavigate, onOpenSearch }: Sideb
 }
 
 function LlmsLinks({ config }: { config: DocsSiteConfig }) {
+	const [isOpen, setIsOpen] = useState(false);
+	const linksId = useId();
+
 	if (!config.site.llms) {
 		return null;
 	}
 
 	const base = import.meta.env.BASE_URL;
 	return (
-		<div className="flex flex-col gap-1 border-t p-4 text-xs">
-			<div className="px-2 font-medium text-muted-foreground uppercase tracking-wider">For LLMs</div>
-			<a
-				className="rounded-md px-2 py-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-				href={`${base}llms.txt`}
+		<div className="shrink-0 border-t bg-background px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] text-xs">
+			<button
+				type="button"
+				aria-expanded={isOpen}
+				aria-controls={linksId}
+				className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left font-medium text-muted-foreground uppercase tracking-wider transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+				onClick={() => setIsOpen((current) => !current)}
 			>
-				llms.txt
-				<span className="ml-2 text-[10px] text-muted-foreground/70">index</span>
-			</a>
-			<a
-				className="rounded-md px-2 py-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-				href={`${base}llms-full.txt`}
-			>
-				llms-full.txt
-				<span className="ml-2 text-[10px] text-muted-foreground/70">all docs, paste-ready</span>
-			</a>
+				<span className="min-w-0 flex-1 truncate">For LLMs</span>
+				<ChevronDownIcon className={cn("size-4 transition-transform", isOpen && "rotate-180")} aria-hidden="true" />
+			</button>
+			{isOpen && (
+				<div id={linksId} className="mt-1 flex flex-col gap-1">
+					<a
+						className="flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						href={`${base}llms.txt`}
+					>
+						<span className="min-w-0 flex-1 truncate font-medium">llms.txt</span>
+						<span className="shrink-0 text-[10px] text-muted-foreground/70">index</span>
+					</a>
+					<a
+						className="flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+						href={`${base}llms-full.txt`}
+					>
+						<span className="min-w-0 flex-1 truncate font-medium">llms-full.txt</span>
+						<span className="shrink-0 text-[10px] text-muted-foreground/70">all docs, paste-ready</span>
+					</a>
+				</div>
+			)}
 		</div>
 	);
 }
