@@ -1,7 +1,6 @@
 import {
 	BookOpenTextIcon,
 	CheckIcon,
-	ChevronDownIcon,
 	ClipboardIcon,
 	CornerDownRightIcon,
 	FileTextIcon,
@@ -376,36 +375,24 @@ function SiteLinks({
 				if (mode === "mobile" || mode === "sidebar") {
 					const isFamilyCurrent =
 						link.id === config.site.id || childLinks.some((childLink) => childLink.id === config.site.id);
-					const isChildCurrent = childLinks.some((childLink) => childLink.id === config.site.id);
 					return (
-						<span key={link.id} className="group/site-link-family flex flex-col items-stretch">
+						<span key={link.id} className="flex flex-col items-stretch">
 							<SiteLinkPill
 								link={link}
 								isCurrent={link.id === config.site.id}
-								hasChildren
 								familyHighlighted={isFamilyCurrent}
-								childExpanded={isChildCurrent}
 							/>
-							<span
-								className={cn(
-									"grid transition-[grid-template-rows,opacity] duration-300 ease-in group-hover/site-link-family:grid-rows-[1fr] group-hover/site-link-family:opacity-100 group-focus-within/site-link-family:grid-rows-[1fr] group-focus-within/site-link-family:opacity-100",
-									isChildCurrent ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-								)}
-							>
-								<span className="overflow-hidden">
-									<span className="ml-3 mt-1 flex flex-col gap-1 border-l pl-2">
-										{childLinks.map((childLink) => (
-											<SiteLinkPill
-												key={childLink.id}
-												link={childLink}
-												isCurrent={childLink.id === config.site.id}
-												isChild
-												parentLabel={link.label}
-												layout="submenu"
-											/>
-										))}
-									</span>
-								</span>
+							<span className="ml-3 mt-1 flex flex-col gap-1 border-l pl-2">
+								{childLinks.map((childLink) => (
+									<SiteLinkPill
+										key={childLink.id}
+										link={childLink}
+										isCurrent={childLink.id === config.site.id}
+										isChild
+										parentLabel={link.label}
+										layout="submenu"
+									/>
+								))}
 							</span>
 						</span>
 					);
@@ -435,18 +422,14 @@ function SiteLinkPill({
 	isCurrent,
 	isChild = false,
 	parentLabel,
-	hasChildren = false,
 	familyHighlighted = false,
-	childExpanded = false,
 	layout = "inline",
 }: {
 	link: DocsSiteLink;
 	isCurrent: boolean;
 	isChild?: boolean;
 	parentLabel?: string;
-	hasChildren?: boolean;
 	familyHighlighted?: boolean;
-	childExpanded?: boolean;
 	layout?: "inline" | "submenu";
 }) {
 	const isSubmenuRow = layout === "submenu";
@@ -490,15 +473,6 @@ function SiteLinkPill({
 				>
 					{link.metaLabel}
 				</span>
-			)}
-			{hasChildren && (
-				<ChevronDownIcon
-					className={cn(
-						"ml-0.5 size-3 shrink-0 text-muted-foreground transition-transform duration-150 group-hover/site-link-family:rotate-180 group-focus-within/site-link-family:rotate-180",
-						childExpanded && "rotate-180",
-					)}
-					aria-hidden="true"
-				/>
 			)}
 		</span>
 	);
