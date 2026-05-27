@@ -98,7 +98,10 @@ test onboarding without touching your real profile.
 
 ```bash
 cd /path/to/clanky-pi
+corepack enable
+corepack prepare pnpm@10.33.4 --activate
 pnpm install
+export PATH="$PWD/node_modules/.bin:$PATH" # source checkout only
 pnpm dev:setup:fresh
 ```
 
@@ -126,6 +129,9 @@ After the fresh run works, start a persistent profile:
 ```bash
 clanky --home ~/.clanky --profile personal --cwd .
 ```
+
+The released CLI is intended to be used directly as `clanky`. The `PATH` line
+is only for a source checkout before the CLI is installed globally.
 
 Inside Clanky:
 
@@ -273,7 +279,10 @@ real profile:
 
 ```bash
 cd /path/to/clanky-pi
+corepack enable
+corepack prepare pnpm@10.33.4 --activate
 pnpm install
+export PATH="$PWD/node_modules/.bin:$PATH" # source checkout only
 pnpm dev:setup:fresh
 ```
 
@@ -296,6 +305,9 @@ For a persistent profile:
 ```bash
 clanky --home ~/.clanky --profile personal --cwd .
 ```
+
+The released CLI is intended to be used directly as `clanky`. The `PATH` line
+is only for a source checkout before the CLI is installed globally.
 
 ## Communication Gateways And Voice
 
@@ -511,7 +523,7 @@ guide Clanky just like it guides Pi.
 
 | Command | Why it still matters |
 | --- | --- |
-| `/login`, `/logout` | Pi provider auth path for subscription/API-key providers. Clanky also has `/openai-login` for profile-local API keys. |
+| `/login`, `/logout` | Pi provider auth path for subscription/API-key providers. Clanky also has `/openai-login` and `/auth remove <provider>` for profile-local API keys. |
 | `/model` | Switch the current model. Clanky defaults to `openai/gpt-5.5`. |
 | `/settings` | Change thinking, theme, message delivery, and transport settings. |
 | `/resume`, `/new`, `/session` | Manage Pi session files stored in the active Clanky profile. |
@@ -580,8 +592,12 @@ cd /path/to/clanky-pi
 corepack enable
 corepack prepare pnpm@10.33.4 --activate
 pnpm install
+export PATH="$PWD/node_modules/.bin:$PATH" # source checkout only
 clanky --help
 ```
+
+The released CLI is intended to be used directly as `clanky`. The `PATH` line
+is only for a source checkout before the CLI is installed globally.
 
 The docs site and CI use the same workspace scripts. For hosted docs only:
 
@@ -663,6 +679,7 @@ flow:
 /login
 /openai-login
 /openai-whoami
+/auth
 ```
 
 `/openai-login` stores the key in the active profile's `auth.json` under the
@@ -671,11 +688,15 @@ OpenAI provider id. Environment variables still work and override stored auth:
 - `CLANKY_OPENAI_API_KEY`
 - `OPENAI_API_KEY`
 
+Remove stored provider credentials from the TUI with `/auth remove <provider>`
+or `/auth remove all`. That does not unset launch environment variables.
+
 Clanky's default chat model is `openai/gpt-5.5`. Main Clanky defaults to
 `xhigh` thinking, while Clanky-owned subagents default to `medium`. Inspect or
 change that at runtime with:
 
 ```text
+/model
 /effort
 /effort main high
 /effort subagents medium
@@ -852,7 +873,9 @@ The TUI setup and status commands edit or report these stores:
 
 ```text
 /setup
+/setup agentroom
 /openai-login
+/auth
 /discord-login
 /discord-voice
 /xai-login
@@ -861,6 +884,9 @@ The TUI setup and status commands edit or report these stores:
 ```
 
 They should not write hidden state outside the resolved Clanky home/profile.
+Use `/auth remove <provider>` or `/auth remove all` to delete stored provider
+credentials from the active profile without touching launch environment
+variables.
 
 ## Environment Overrides
 
@@ -905,7 +931,6 @@ workTracker:
   providers:
     linear:
       type: linear
-      tokenEnv: LINEAR_API_KEY
       teamId: team_123
 
 clanky:
@@ -917,10 +942,9 @@ clanky:
 Precedence remains explicit: `--home` / `--profile` and `CLANKY_HOME` /
 `CLANKY_PROFILE` win over the portable Clanky defaults. The AgentRoom block can
 set the selected work tracker and provider-local defaults such as a team id, but
-it only names secret environment variables; it does not store API keys or make
-Clanky own provider-specific API calls. Tracker creation, comments, and status
-updates still go through the installed MCP server, CLI, or skill for that
-provider.
+it does not store API keys or make Clanky own provider-specific API calls.
+Tracker creation, comments, and status updates still go through the installed
+MCP server, CLI, connector, or skill for that provider.
 
 ## Rule For New Settings
 
@@ -981,12 +1005,15 @@ Useful Pi editor patterns still apply:
 ```text
 /setup
 /setup status
+/setup agentroom
 /setup fresh
 ```
 
 Use `/setup status` when you want a compact view of profile paths, OpenAI,
 gateway ownership, current Discord adapter status, Discord voice, ElevenLabs,
-xAI, and AgentRoom participation.
+xAI, and AgentRoom participation. Use `/setup agentroom` to inspect the
+detected room config, Clanky room defaults, chat ownership, and work tracker
+defaults. Edit room-level settings from the AgentRoom TUI with `/setup`.
 
 ## Memory Workflow
 
@@ -1564,6 +1591,9 @@ clanky logs --json
 | `/effort main <level>` | Set main Clanky thinking level. |
 | `/effort subagents <level>` | Set active/default subagent thinking level. |
 | `/effort all <level>` | Set both. |
+| `/auth` | List stored provider credentials in the active Clanky profile. |
+| `/auth remove <provider>` | Remove stored credentials for one provider. |
+| `/auth remove all` | Remove all stored provider credentials from the active profile. |
 
 Thinking levels: `off`, `minimal`, `low`, `medium`, `high`, `xhigh`.
 
@@ -1611,7 +1641,8 @@ These are inherited from Pi and work inside Clanky:
 | `/elevenlabs-whoami` | Show active ElevenLabs credential source. |
 | `/elevenlabs-logout` | Remove the stored ElevenLabs credential. |
 
-Environment variables still override stored credentials where supported.
+`/auth remove` edits only the active profile `auth.json`. Environment variables
+and `models.json` request auth still override stored credentials where supported.
 
 ## Discord Voice Commands
 
@@ -1700,7 +1731,8 @@ are available and credentials/policy allow it:
   `discord_voice_leave`.
 - Coordination: `main_session_context`, `delegate_to_main_worker`,
   `subagent_status`.
-- Work tracking: `work_tracker_create_issue`, `work_tracker_link`.
+- Work tracking: `work_tracker_link` for binding issues created or found through
+  MCP, CLI, or tracker-specific skills.
 - MCP: `mcp_list_tools`, `mcp_call`.
 
 `task_create` and `schedule_cron` exist in the shared tool layer, but are only
@@ -2163,16 +2195,17 @@ Minimum credential set:
 
 ## Linear
 
-Required only for live Linear issue creation or link updates from Clanky tools.
+Required only when the installed Linear MCP, CLI, or skill is used for live
+Linear issue creation, comments, or status updates.
 
 ```bash
 LINEAR_API_KEY=... clanky --home ~/.clanky --profile personal
 ```
 
-Expected result: `work_tracker_create_issue` can create Linear issues when
-Linear is the selected provider, and `work_tracker_link` can persist tracker
-refs. If tracker credentials are unavailable, Clanky should report the skipped
-tracker update explicitly rather than pretending it happened.
+Expected result: the Linear integration can create or update the issue, then
+`work_tracker_link` can persist the tracker ref. If tracker credentials or tools
+are unavailable, Clanky should report the skipped tracker update explicitly
+rather than pretending it happened.
 
 ## xAI Media
 
