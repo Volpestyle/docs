@@ -34,3 +34,9 @@ local docs can override them with env vars such as `DOCS_AGENT_ROOM_URL`,
 Agent repos stay private. Their docs workflows build from private Markdown and
 publish only generated static output into this public repo's Pages branch under
 paths such as `/docs/clanky/` and `/docs/agent-room/`.
+
+The publish workflow treats the public boundary as a hard gate. Project docs may
+only be built from `README.md` and Markdown files under `docs/`; raw imports from
+source directories are rejected. The generated artifact is also scanned before
+publish for source maps, source-code files, repo metadata, dependency locks, env
+files, and high-confidence credentials.

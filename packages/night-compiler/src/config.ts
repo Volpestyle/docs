@@ -1,10 +1,16 @@
 import type { Doc, DocsSiteConfig, DocsSiteInput, DocsSiteLink } from "./types.js";
+import { validatePublicDocsInput } from "./public-docs-guard.js";
 
 type ImportMetaWithEnv = ImportMeta & {
 	env?: Record<string, string | undefined>;
 };
 
 export function defineDocsConfig(input: DocsSiteInput): DocsSiteConfig {
+	validatePublicDocsInput({
+		docsMeta: input.docsMeta,
+		markdownBySource: input.markdownBySource,
+	});
+
 	const docs: Doc[] = input.docsMeta.map((meta) => {
 		const markdown = input.markdownBySource[meta.source];
 		if (markdown === undefined) {

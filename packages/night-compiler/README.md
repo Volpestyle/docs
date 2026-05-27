@@ -48,6 +48,13 @@ jobs:
 public `Volpestyle/docs` repository. This keeps the agent repositories private
 while still hosting one public docs website at `https://volpestyle.github.io/docs/`.
 
+The shared workflow enforces the public boundary before publish:
+
+- docs apps may raw-import only `README.md` and Markdown files under `docs/`
+- manifests may publish only `README.md` and `docs/**/*.md`
+- generated artifacts fail if they contain source maps, source-code files,
+  repository metadata, dependency locks, env files, or high-confidence secrets
+
 Merge shared framework changes here first, then run or dispatch each consumer
 repo's docs workflow so the public docs host rebuilds with the latest framework.
 

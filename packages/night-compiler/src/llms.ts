@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
+import { assertPublicDocsSource, validatePublicDocsInput } from "./public-docs-guard.js";
 import type { DocGroup, DocMeta, DocsLlmsConfig } from "./types.js";
 
 export type GenerateLlmsFilesOptions = {
@@ -17,6 +18,8 @@ export async function generateLlmsFiles({
 	repoRoot,
 	publicDir,
 }: GenerateLlmsFilesOptions): Promise<void> {
+	validatePublicDocsInput({ docsMeta });
+
 	await mkdir(publicDir, { recursive: true });
 	const grouped = groupBy(docsMeta, groups);
 
@@ -53,7 +56,18 @@ function groupBy(metas: DocMeta[], groupOrder: DocGroup[]): Map<DocGroup, DocMet
 }
 
 async function loadMarkdown(repoRoot: string, meta: DocMeta): Promise<string> {
-	return readFile(join(repoRoot, meta.source), "utf8");
+	return readFile(resolvePublicDocsSourcePath(repoRoot, meta.source), "utf8");
+}
+
+function resolvePublicDocsSourcePath(repoRoot: string, source: string): string {
+	const normalizedSource = assertPublicDocsSource(source);
+	const root = resolve(repoRoot);
+	const sourcePath = resolve(root, normalizedSource);
+	const sourceRelativePath = relative(root, sourcePath);
+	if (sourceRelativePath.startsWith("..") || isAbsolute(sourceRelativePath)) {
+		throw new Error(`Public docs guard rejected source outside repo root: "${source}"`);
+	}
+	return sourcePath;
 }
 
 async function buildLlmsTxt(
