@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgentRoom iOS Docs</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/docs/agent-room-ios/branding/agent-room-ios-icon.svg"
+    />
+    <meta name="theme-color" content="#0f172a" />
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("agent-room-ios-docs:theme");
+          const prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          if (saved === "dark" || (!saved && prefersDark)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch {}
+      })();
+    </script>
+    <meta property="og:title" content="AgentRoom iOS Docs" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:description"
+      content="Native iOS client docs for checking and steering AgentRoom from a phone."
+    />
+    <meta name="twitter:card" content="summary" />
+    <script type="module" crossorigin src="/docs/agent-room-ios/assets/index-C6Q5pqZi.js"></script>
+    <link rel="stylesheet" crossorigin href="/docs/agent-room-ios/assets/index-DbldPpZH.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

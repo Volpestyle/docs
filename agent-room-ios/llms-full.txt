@@ -1,0 +1,115 @@
+# AgentRoom iOS - Full Docs
+
+> AgentRoom iOS is the native SwiftUI client for pairing with an AgentRoom daemon, inspecting room state, and steering work from a phone without inventing a second room API.
+
+Generated from the live docs site. Each section below is one page; see the heading and source path for context.
+
+---
+
+# Overview
+
+Source: `README.md` - https://volpestyle.github.io/docs/agent-room-ios/?doc=overview
+
+# AgentRoom iOS
+
+Native iOS prototype for checking and steering an AgentRoom from the phone. The
+visual direction is stripped, dark, and operational, matching the
+[v4 Figma mockups](https://www.figma.com/design/T6jICC07t8CpNZYm9PRQie/swarm-ios-%E2%80%94-mockups).
+
+## 1. What You Can Do
+
+- pair with a local AgentRoom daemon over a private tailnet
+- store the daemon URL in app preferences and the token in Keychain
+- inspect workspace, tab, pane, and connection state away from the desk
+- move through the same room hierarchy the TUI exposes locally
+- prototype the mobile operator surface without inventing a second room API
+
+> GIF slot: `docs/assets/gifs/mobile-room-check.gif`  
+> Capture: run `agent-room mobile-connect --copy`, open the link on iPhone, and
+> inspect a room over tailnet.
+
+## 2. What The App Lets AgentRoom Handle
+
+The iOS app is only the client. AgentRoom owns the daemon API, auth semantics,
+room state, runtime bindings, and pairing payload. When the app needs new
+behavior, update or document the AgentRoom daemon contract first, then wire the
+SwiftUI client to that contract.
+
+## 3. Mental Model
+
+```mermaid
+flowchart LR
+  phone["iPhone app"]
+  tailnet["Private LAN / Tailscale"]
+  daemon["agentroomd"]
+  room["AgentRoom room<br/>events, agents, tasks, runtime state"]
+
+  phone --> tailnet
+  tailnet --> daemon
+  daemon --> room
+```
+
+HTTP URLs are accepted only for local/private LAN and Tailscale modes. Custom
+endpoints must use HTTPS.
+
+## Connect
+
+Start the AgentRoom daemon locally:
+
+```bash
+agent-room daemon start
+```
+
+For a phone on your private network, start the daemon on the tailnet and print
+the mobile payload:
+
+```bash
+AGENTROOM_API_TOKEN="$(openssl rand -hex 24)" agent-room daemon start --tailnet
+agent-room mobile-connect --copy
+```
+
+Open the copied `agentroom://connect?...` link on the iPhone with Universal
+Clipboard, Messages, AirDrop, or Notes. Manual URL/token entry is still
+supported from the connection screen.
+
+## Run
+
+```bash
+brew install xcodegen      # if not already installed
+xcodegen generate          # regenerate SwarmiOS.xcodeproj from project.yml
+open SwarmiOS.xcodeproj    # pick iPhone 17 Pro, Cmd+R
+```
+
+Command line:
+
+```bash
+xcodebuild -project SwarmiOS.xcodeproj \
+  -scheme SwarmiOS \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  build
+```
+
+## Documentation
+
+The hosted docs UI renders this README as the source of truth.
+
+```bash
+pnpm docs:dev
+pnpm docs:build
+```
+
+## Structure
+
+```text
+SwarmiOS/
+  SwarmiOSApp.swift
+  RootView.swift
+  Tokens/
+  Models/
+  Components/
+  Screens/
+```
+
+The seeded `AppStore.demo()` workspace `swarm-mcp` has 2 tabs and 5 panes. Open
+it from the list view to see the workspace, tab, and pane hierarchy before
+connecting to a live daemon.

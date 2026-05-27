@@ -1,0 +1,7 @@
+# AgentRoom iOS
+
+> AgentRoom iOS is the native SwiftUI client for pairing with an AgentRoom daemon, inspecting room state, and steering work from a phone without inventing a second room API.
+
+## Start
+
+- [Overview](https://volpestyle.github.io/docs/agent-room-ios/?doc=overview): Pairing, operating model, daemon boundary, run commands, and app structure.

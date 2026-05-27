@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ClankVox Docs</title>
+    <link rel="icon" type="image/svg+xml" href="/docs/clankvox/branding/clankvox-icon.svg" />
+    <meta name="theme-color" content="#111827" />
+    <script>
+      (() => {
+        try {
+          const saved = localStorage.getItem("clankvox-docs:theme");
+          const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (saved === "dark" || (!saved && prefersDark)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch {}
+      })();
+    </script>
+    <meta property="og:title" content="ClankVox Docs" />
+    <meta property="og:type" content="website" />
+    <meta property="og:description" content="Rust media-plane docs for Clanky's Discord voice and Go Live transport." />
+    <meta name="twitter:card" content="summary" />
+    <script type="module" crossorigin src="/docs/clankvox/assets/index-BcPfASCw.js"></script>
+    <link rel="stylesheet" crossorigin href="/docs/clankvox/assets/index-COR2BZ-7.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

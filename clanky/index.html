@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Clanky Docs</title>
+		<link rel="icon" type="image/png" sizes="32x32" href="/docs/clanky/branding/clanky-icon-32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/docs/clanky/branding/clanky-icon-16.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/docs/clanky/branding/apple-touch-icon.png" />
+		<meta name="theme-color" content="#0a0608" />
+		<script>
+			(() => {
+				try {
+					const saved = localStorage.getItem("clanky-docs:theme");
+					const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+					if (saved === "dark" || (!saved && prefersDark)) {
+						document.documentElement.classList.add("dark");
+					}
+				} catch {}
+			})();
+		</script>
+		<meta property="og:title" content="Clanky Docs" />
+		<meta property="og:type" content="website" />
+		<meta property="og:image" content="/docs/clanky/branding/clanky-logo-512.png" />
+		<meta name="twitter:card" content="summary" />
+		<meta name="twitter:image" content="/docs/clanky/branding/clanky-logo-512.png" />
+		<script type="module" crossorigin src="/docs/clanky/assets/index-dP2sBbC1.js"></script>
+		<link rel="stylesheet" crossorigin href="/docs/clanky/assets/index-6Bkpm6-r.css">
+	</head>
+	<body>
+		<div id="root"></div>
+	</body>
+</html>
