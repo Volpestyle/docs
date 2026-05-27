@@ -1,6 +1,7 @@
 import {
 	BookOpenTextIcon,
 	CheckIcon,
+	ChevronDownIcon,
 	ClipboardIcon,
 	CornerDownRightIcon,
 	FileTextIcon,
@@ -369,19 +370,31 @@ function SiteLinks({
 				}
 
 				if (mode === "mobile") {
+					const isFamilyCurrent =
+						link.id === config.site.id || childLinks.some((childLink) => childLink.id === config.site.id);
 					return (
-						<span key={link.id} className="flex flex-col items-stretch gap-1">
-							<SiteLinkPill link={link} isCurrent={link.id === config.site.id} />
-							<span className="ml-3 flex flex-col gap-1 border-l pl-2">
-								{childLinks.map((childLink) => (
-									<SiteLinkPill
-										key={childLink.id}
-										link={childLink}
-										isCurrent={childLink.id === config.site.id}
-										isChild
-										parentLabel={link.label}
-									/>
-								))}
+						<span key={link.id} className="group/site-link-family flex flex-col items-stretch">
+							<SiteLinkPill
+								link={link}
+								isCurrent={link.id === config.site.id}
+								hasChildren
+								familyHighlighted={isFamilyCurrent}
+							/>
+							<span className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-300 ease-in group-hover/site-link-family:grid-rows-[1fr] group-hover/site-link-family:opacity-100 group-focus-within/site-link-family:grid-rows-[1fr] group-focus-within/site-link-family:opacity-100">
+								<span className="overflow-hidden">
+									<span className="ml-3 mt-1 flex flex-col gap-1 border-l pl-2">
+										{childLinks.map((childLink) => (
+											<SiteLinkPill
+												key={childLink.id}
+												link={childLink}
+												isCurrent={childLink.id === config.site.id}
+												isChild
+												parentLabel={link.label}
+												layout="submenu"
+											/>
+										))}
+									</span>
+								</span>
 							</span>
 						</span>
 					);
@@ -415,13 +428,39 @@ function SiteLinkPill({
 	isCurrent,
 	isChild = false,
 	parentLabel,
+	hasChildren = false,
+	familyHighlighted = false,
+	layout = "inline",
 }: {
 	link: DocsSiteLink;
 	isCurrent: boolean;
 	isChild?: boolean;
 	parentLabel?: string;
+	hasChildren?: boolean;
+	familyHighlighted?: boolean;
+	layout?: "inline" | "submenu";
 }) {
-	const content = (
+	const isSubmenuRow = layout === "submenu";
+	const content = isSubmenuRow ? (
+		<span
+			className={cn(
+				"flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+				isCurrent
+					? "bg-secondary text-secondary-foreground"
+					: "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+			)}
+		>
+			{isChild && (
+				<CornerDownRightIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+			)}
+			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span className="truncate font-medium text-foreground">{link.label}</span>
+				{link.relationLabel && (
+					<span className="truncate text-[11px] text-muted-foreground">{link.relationLabel}</span>
+				)}
+			</span>
+		</span>
+	) : (
 		<span
 			className={cn(
 				"inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 font-medium text-sm transition-colors",
@@ -429,6 +468,7 @@ function SiteLinkPill({
 					? "bg-secondary text-secondary-foreground"
 					: "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 				isChild && "border border-dashed border-border bg-background px-2",
+				!isCurrent && familyHighlighted && "text-foreground",
 			)}
 		>
 			{isChild && <CornerDownRightIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />}
@@ -446,6 +486,12 @@ function SiteLinkPill({
 					{link.metaLabel}
 				</span>
 			)}
+			{hasChildren && (
+				<ChevronDownIcon
+					className="ml-0.5 size-3 shrink-0 text-muted-foreground transition-transform duration-150 group-hover/site-link-family:rotate-180 group-focus-within/site-link-family:rotate-180"
+					aria-hidden="true"
+				/>
+			)}
 		</span>
 	);
 	const title = [link.description, isChild && parentLabel ? `Part of ${parentLabel}.` : undefined]
@@ -453,7 +499,12 @@ function SiteLinkPill({
 		.join(" ");
 
 	return (
-		<a href={link.href} aria-current={isCurrent ? "page" : undefined} title={title || undefined}>
+		<a
+			href={link.href}
+			aria-current={isCurrent ? "page" : undefined}
+			title={title || undefined}
+			className={cn(isSubmenuRow && "block")}
+		>
 			{content}
 		</a>
 	);
