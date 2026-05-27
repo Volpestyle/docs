@@ -1,0 +1,93 @@
+name: Docs Pages
+
+on:
+  workflow_call:
+    inputs:
+      docs-base-path:
+        required: true
+        type: string
+      node-version:
+        required: false
+        type: string
+        default: "24"
+      pnpm-version:
+        required: false
+        type: string
+        default: "11.0.0"
+      build-command:
+        required: false
+        type: string
+        default: "pnpm docs:build"
+      artifact-path:
+        required: false
+        type: string
+        default: "apps/docs/dist"
+      prepare-command:
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "docs-pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site repository
+        uses: actions/checkout@v6
+
+      - name: Checkout shared docs framework
+        run: git clone --depth 1 https://github.com/Volpestyle/docs.git ../docs
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@${{ inputs.pnpm-version }} --activate
+
+      - name: Prepare local file dependencies
+        if: inputs.prepare-command != ''
+        run: ${{ inputs.prepare-command }}
+
+      - name: Install shared docs dependencies
+        run: pnpm --dir ../docs install --frozen-lockfile
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs
+        run: ${{ inputs.build-command }}
+        env:
+          DOCS_BASE_PATH: ${{ inputs.docs-base-path }}
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ inputs.artifact-path }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
