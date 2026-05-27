@@ -38,7 +38,7 @@ on:
         type: string
         default: "gh-pages"
     secrets:
-      docs-publish-token:
+      docs-publish-key:
         required: true
 
 permissions:
@@ -75,16 +75,30 @@ jobs:
         if: inputs.prepare-command != ''
         run: ${{ inputs.prepare-command }}
 
-      - name: Validate docs publish token
+      - name: Configure docs publish SSH key
         if: github.event_name != 'pull_request'
         env:
-          DOCS_PUBLISH_TOKEN: ${{ secrets.docs-publish-token }}
+          DOCS_PUBLISH_KEY: ${{ secrets.docs-publish-key }}
         run: |
           set -euo pipefail
-          if [ -z "$DOCS_PUBLISH_TOKEN" ]; then
-            echo "DOCS_PUBLISH_TOKEN is required to publish generated docs into Volpestyle/docs." >&2
+          if [ -z "$DOCS_PUBLISH_KEY" ]; then
+            echo "DOCS_PUBLISH_KEY is required to publish generated docs into Volpestyle/docs." >&2
             exit 1
           fi
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DOCS_PUBLISH_KEY" > ~/.ssh/docs_publish_key
+          chmod 600 ~/.ssh/docs_publish_key
+          curl -fsSL https://api.github.com/meta | node -e '
+            let body = "";
+            process.stdin.on("data", (chunk) => (body += chunk));
+            process.stdin.on("end", () => {
+              for (const key of JSON.parse(body).ssh_keys) {
+                console.log(`github.com ${key}`);
+              }
+            });
+          ' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Install shared docs dependencies
         run: pnpm --dir ../docs install --frozen-lockfile
@@ -106,11 +120,11 @@ jobs:
       - name: Publish to shared docs host
         if: github.event_name != 'pull_request'
         env:
-          DOCS_PUBLISH_TOKEN: ${{ secrets.docs-publish-token }}
           PUBLISH_REPOSITORY: ${{ inputs.publish-repository }}
           PUBLISH_BRANCH: ${{ inputs.publish-branch }}
           SITE_SLUG: ${{ inputs.site-slug }}
           ARTIFACT_PATH: ${{ inputs.artifact-path }}
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/docs_publish_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes
         run: |
           set -euo pipefail
 
@@ -122,11 +136,10 @@ jobs:
           esac
 
           publish_dir="$RUNNER_TEMP/docs-pages-publish"
-          remote_url="https://github.com/${PUBLISH_REPOSITORY}.git"
-          auth_header="AUTHORIZATION: bearer ${DOCS_PUBLISH_TOKEN}"
+          remote_url="git@github.com:${PUBLISH_REPOSITORY}.git"
 
-          if git -c http.extraheader="$auth_header" ls-remote --exit-code --heads "$remote_url" "$PUBLISH_BRANCH" >/dev/null 2>&1; then
-            git -c http.extraheader="$auth_header" clone --depth 1 --branch "$PUBLISH_BRANCH" "$remote_url" "$publish_dir"
+          if git ls-remote --exit-code --heads "$remote_url" "$PUBLISH_BRANCH" >/dev/null 2>&1; then
+            git clone --depth 1 --branch "$PUBLISH_BRANCH" "$remote_url" "$publish_dir"
           else
             mkdir -p "$publish_dir"
             git -C "$publish_dir" init
@@ -154,10 +167,10 @@ jobs:
 
           git -C "$publish_dir" commit -m "Publish ${SITE_SLUG} docs from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
           for attempt in 1 2 3; do
-            if git -c http.extraheader="$auth_header" -C "$publish_dir" push origin "HEAD:$PUBLISH_BRANCH"; then
+            if git -C "$publish_dir" push origin "HEAD:$PUBLISH_BRANCH"; then
               exit 0
             fi
-            git -c http.extraheader="$auth_header" -C "$publish_dir" pull --rebase origin "$PUBLISH_BRANCH"
+            git -C "$publish_dir" pull --rebase origin "$PUBLISH_BRANCH"
           done
 
           echo "Failed to publish docs after 3 attempts." >&2

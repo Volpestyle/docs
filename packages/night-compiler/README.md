@@ -41,12 +41,13 @@ jobs:
       docs-base-path: /docs/agent-room/
       site-slug: agent-room
     secrets:
-      docs-publish-token: ${{ secrets.DOCS_PUBLISH_TOKEN }}
+      docs-publish-key: ${{ secrets.DOCS_PUBLISH_KEY }}
 ```
 
-`DOCS_PUBLISH_TOKEN` must be a fine-grained token that can write contents to the
-public `Volpestyle/docs` repository. This keeps the agent repositories private
-while still hosting one public docs website at `https://volpestyle.github.io/docs/`.
+`DOCS_PUBLISH_KEY` must be an SSH private key whose public key is installed as a
+write deploy key on the public `Volpestyle/docs` repository. This keeps the
+agent repositories private while still hosting one public docs website at
+`https://volpestyle.github.io/docs/`.
 
 The shared workflow enforces the public boundary before publish:
 
