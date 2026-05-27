@@ -24,9 +24,9 @@ visual direction is stripped, dark, and operational, matching the
 - move through the same room hierarchy the TUI exposes locally
 - prototype the mobile operator surface without inventing a second room API
 
-> GIF slot: `docs/assets/gifs/mobile-room-check.gif`  
-> Capture: run `agent-room mobile-connect --copy`, open the link on iPhone, and
-> inspect a room over tailnet.
+<!-- Capture backlog:
+- docs/assets/gifs/mobile-room-check.gif: run agent-room mobile-connect --copy, open the link on iPhone, and inspect a room over tailnet.
+-->
 
 ## 2. What The App Lets AgentRoom Handle
 
