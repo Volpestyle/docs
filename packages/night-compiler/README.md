@@ -29,21 +29,27 @@ Use `createAgentWorkspaceSiteLinks()` for the shared Clanky / AgentRoom /
 AgentRoom iOS / ClankVox site registry. The registry lives here so each docs
 site does not duplicate labels, hierarchy, URLs, and relationship metadata.
 
-Consumer repos can call the shared Pages workflow instead of copying the full
-deploy job:
+Consumer repos call the shared workflow instead of copying deploy logic. The
+workflow builds docs inside the private source repo, then publishes only the
+generated static site into the public `Volpestyle/docs` Pages host:
 
 ```yaml
 jobs:
   docs-pages:
     uses: Volpestyle/docs/.github/workflows/docs-pages.yml@main
     with:
-      docs-base-path: /agent-room/
+      docs-base-path: /docs/agent-room/
+      site-slug: agent-room
+    secrets:
+      docs-publish-token: ${{ secrets.DOCS_PUBLISH_TOKEN }}
 ```
 
-Because the hosted sites live in separate repositories, merge shared framework
-changes here first, then run or dispatch each consumer repo's docs workflow so
-GitHub Pages rebuilds with the latest framework. A future repository-dispatch
-workflow can automate that once a cross-repo deploy token exists.
+`DOCS_PUBLISH_TOKEN` must be a fine-grained token that can write contents to the
+public `Volpestyle/docs` repository. This keeps the agent repositories private
+while still hosting one public docs website at `https://volpestyle.github.io/docs/`.
+
+Merge shared framework changes here first, then run or dispatch each consumer
+repo's docs workflow so the public docs host rebuilds with the latest framework.
 
 Cross-site links resolve against `site.siteLinks`:
 

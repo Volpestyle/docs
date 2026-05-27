@@ -6,6 +6,9 @@ on:
       docs-base-path:
         required: true
         type: string
+      site-slug:
+        required: true
+        type: string
       node-version:
         required: false
         type: string
@@ -26,6 +29,17 @@ on:
         required: false
         type: string
         default: ""
+      publish-repository:
+        required: false
+        type: string
+        default: "Volpestyle/docs"
+      publish-branch:
+        required: false
+        type: string
+        default: "gh-pages"
+    secrets:
+      docs-publish-token:
+        required: true
 
 permissions:
   contents: read
@@ -35,11 +49,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
     steps:
       - name: Checkout site repository
         uses: actions/checkout@v6
@@ -72,27 +83,62 @@ jobs:
         env:
           DOCS_BASE_PATH: ${{ inputs.docs-base-path }}
 
-      - name: Configure Pages
-        uses: actions/configure-pages@v6
-        with:
-          enablement: true
+      - name: Publish to shared docs host
+        if: github.event_name != 'pull_request'
+        env:
+          DOCS_PUBLISH_TOKEN: ${{ secrets.docs-publish-token }}
+          PUBLISH_REPOSITORY: ${{ inputs.publish-repository }}
+          PUBLISH_BRANCH: ${{ inputs.publish-branch }}
+          SITE_SLUG: ${{ inputs.site-slug }}
+          ARTIFACT_PATH: ${{ inputs.artifact-path }}
+        run: |
+          set -euo pipefail
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: ${{ inputs.artifact-path }}
+          case "$SITE_SLUG" in
+            ""|.*|*..*|*/*)
+              echo "Invalid site-slug: $SITE_SLUG" >&2
+              exit 1
+              ;;
+          esac
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+          publish_dir="$RUNNER_TEMP/docs-pages-publish"
+          remote_url="https://github.com/${PUBLISH_REPOSITORY}.git"
+          auth_header="AUTHORIZATION: bearer ${DOCS_PUBLISH_TOKEN}"
+
+          if git -c http.extraheader="$auth_header" ls-remote --exit-code --heads "$remote_url" "$PUBLISH_BRANCH" >/dev/null 2>&1; then
+            git -c http.extraheader="$auth_header" clone --depth 1 --branch "$PUBLISH_BRANCH" "$remote_url" "$publish_dir"
+          else
+            mkdir -p "$publish_dir"
+            git -C "$publish_dir" init
+            git -C "$publish_dir" checkout --orphan "$PUBLISH_BRANCH"
+          fi
+
+          if ! git -C "$publish_dir" remote get-url origin >/dev/null 2>&1; then
+            git -C "$publish_dir" remote add origin "$remote_url"
+          fi
+
+          git -C "$publish_dir" config user.name "github-actions[bot]"
+          git -C "$publish_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          rm -rf "$publish_dir/$SITE_SLUG"
+          mkdir -p "$publish_dir/$SITE_SLUG"
+          cp -a "$ARTIFACT_PATH"/. "$publish_dir/$SITE_SLUG"/
+          touch "$publish_dir/.nojekyll"
+          node ../docs/scripts/update-pages-index.mjs "$publish_dir"
+
+          git -C "$publish_dir" add --all
+          if git -C "$publish_dir" diff --cached --quiet; then
+            echo "No docs changes to publish."
+            exit 0
+          fi
+
+          git -C "$publish_dir" commit -m "Publish ${SITE_SLUG} docs from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+          for attempt in 1 2 3; do
+            if git -c http.extraheader="$auth_header" -C "$publish_dir" push origin "HEAD:$PUBLISH_BRANCH"; then
+              exit 0
+            fi
+            git -c http.extraheader="$auth_header" -C "$publish_dir" pull --rebase origin "$PUBLISH_BRANCH"
+          done
+
+          echo "Failed to publish docs after 3 attempts." >&2
+          exit 1

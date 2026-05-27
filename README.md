@@ -25,6 +25,12 @@ Markdown can link across docs sites with the `docs://` scheme:
 ```
 
 The shell resolves those links through each site's `siteLinks` config. Published
-docs use the configured GitHub Pages URLs; local docs can override them with env
-vars such as `DOCS_AGENT_ROOM_URL`, `DOCS_CLANKY_URL`, and
-`DOCS_CLANKVOX_URL`.
+docs use the shared GitHub Pages host at `https://volpestyle.github.io/docs/`;
+local docs can override them with env vars such as `DOCS_AGENT_ROOM_URL`,
+`DOCS_CLANKY_URL`, and `DOCS_CLANKVOX_URL`.
+
+## Hosting
+
+Agent repos stay private. Their docs workflows build from private Markdown and
+publish only generated static output into this public repo's Pages branch under
+paths such as `/docs/clanky/` and `/docs/agent-room/`.
