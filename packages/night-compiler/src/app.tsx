@@ -317,7 +317,6 @@ function MobileNavigation({ config, activeSlug, search, onClose, onNavigate, onO
 						<p id="mobile-nav-description" className="sr-only">
 							Documentation navigation
 						</p>
-						<SiteLinks config={config} mode="mobile" />
 					</div>
 					<Button size="icon-sm" variant="ghost" aria-label="Close navigation" onClick={onClose}>
 						<XIcon data-icon="inline-start" />
@@ -413,11 +412,7 @@ function SiteLinks({
 				}
 
 				return (
-					<span
-						key={link.id}
-						className="inline-flex items-center gap-1 rounded-lg border bg-muted/35 p-0.5"
-						aria-label={`${link.label} documentation family`}
-					>
+					<span key={link.id} className="inline-flex items-center gap-1 rounded-lg border bg-muted/35 p-0.5">
 						<SiteLinkPill link={link} isCurrent={link.id === config.site.id} />
 						{childLinks.map((childLink) => (
 							<SiteLinkPill
@@ -464,14 +459,10 @@ function SiteLinkPill({
 					: "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 			)}
 		>
-			{isChild && (
-				<CornerDownRightIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-			)}
+			{isChild && <CornerDownRightIcon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />}
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
 				<span className="truncate font-medium text-foreground">{link.label}</span>
-				{link.relationLabel && (
-					<span className="truncate text-[11px] text-muted-foreground">{link.relationLabel}</span>
-				)}
+				{link.relationLabel && <span className="truncate text-[11px] text-muted-foreground">{link.relationLabel}</span>}
 			</span>
 		</span>
 	) : (
@@ -730,15 +721,18 @@ function useDocRouter(docsBySlug: Map<string, Doc>, defaultDocSlug: string) {
 		return () => window.removeEventListener("popstate", syncFromLocation);
 	}, [defaultDocSlug, docsBySlug]);
 
-	const navigate = useCallback((nextSlug: string, headingId?: string) => {
-		const nextDoc = getDocOrDefault(nextSlug, docsBySlug, defaultDocSlug);
-		const url = new URL(window.location.href);
-		url.searchParams.set("doc", nextDoc.slug);
-		url.hash = headingId ? headingId : "";
-		window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
-		setSlug(nextDoc.slug);
-		scrollAfterNavigation(headingId);
-	}, [defaultDocSlug, docsBySlug]);
+	const navigate = useCallback(
+		(nextSlug: string, headingId?: string) => {
+			const nextDoc = getDocOrDefault(nextSlug, docsBySlug, defaultDocSlug);
+			const url = new URL(window.location.href);
+			url.searchParams.set("doc", nextDoc.slug);
+			url.hash = headingId ? headingId : "";
+			window.history.pushState({}, "", `${url.pathname}${url.search}${url.hash}`);
+			setSlug(nextDoc.slug);
+			scrollAfterNavigation(headingId);
+		},
+		[defaultDocSlug, docsBySlug],
+	);
 
 	return { slug, navigate };
 }

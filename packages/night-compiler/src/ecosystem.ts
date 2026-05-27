@@ -1,10 +1,6 @@
 import type { DocsSiteLink } from "./types.js";
 
-export type AgentWorkspaceDocsSiteId =
-	| "clanky-docs"
-	| "agent-room-docs"
-	| "agent-room-ios-docs"
-	| "clankvox-docs";
+export type AgentWorkspaceDocsSiteId = "clanky-docs" | "agent-room-docs" | "agent-room-ios-docs" | "clankvox-docs";
 
 export const agentWorkspaceDocsBaseUrl = "https://volpestyle.github.io/docs";
 
@@ -18,13 +14,15 @@ export function createAgentWorkspaceSiteLinks(): DocsSiteLink[] {
 			id: "clanky-docs",
 			label: "Clanky",
 			href: agentWorkspaceDocsHref("clanky"),
-			description: "Personal agent docs, setup, operations, and Clanky's AgentRoom integration.",
+			description:
+				"Personal Pi agent docs for profiles, memory, Discord, voice, media, skills, and AgentRoom participation.",
 		},
 		{
 			id: "agent-room-docs",
 			label: "AgentRoom",
 			href: agentWorkspaceDocsHref("agent-room"),
-			description: "Coordination plane docs for rooms, runtimes, gateways, and protocols.",
+			description:
+				"Terminal control room docs for seeing, launching, steering, and auditing long-running coding agents.",
 		},
 		{
 			id: "agent-room-ios-docs",
