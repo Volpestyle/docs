@@ -32,9 +32,9 @@ ClankVox makes these Clanky voice workflows possible:
 - keep voice, screen, and playback telemetry available to Clanky's floor-control
   policy
 
-> GIF slot: `docs/assets/gifs/clankvox-voice-live.gif`  
-> Capture: Clanky's live voice harness showing input audio, output audio,
-> `ask_pi`, playback telemetry, and screen-watch counters.
+<!-- Capture backlog:
+- docs/assets/gifs/clankvox-voice-live.gif: Clanky's live voice harness showing input audio, output audio, ask_pi, playback telemetry, and screen-watch counters.
+-->
 
 ## 2. What Clanky Lets ClankVox Handle
 
