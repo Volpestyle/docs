@@ -1,6 +1,6 @@
 # ClankVox
 
-> ClankVox is the Rust media plane that Clanky delegates Discord voice and Go Live transport to: RTP, Opus, DAVE, H264/VP8, playback pacing, and JSON-line IPC.
+> ClankVox is Clanky's main Rust package for voice and media transport. Its Discord implementation covers RTP, Opus, DAVE, H264/VP8, playback pacing, Go Live, and JSON-line IPC.
 
 ## Start
 
@@ -8,7 +8,7 @@
 
 ## Architecture
 
-- [System Diagram](https://volpestyle.github.io/docs/clankvox/?doc=diagram): Media-plane map for Clanky, JSON-line IPC, ClankVox roles, DAVE, audio, and video transport.
+- [System Diagram](https://volpestyle.github.io/docs/clankvox/?doc=diagram): Media-plane map for Clanky, JSON-line IPC, ClankVox transport implementations, audio, and video.
 - [Architecture](https://volpestyle.github.io/docs/clankvox/?doc=architecture): Ownership boundaries, process model, core state, transport roles, IPC, and module map.
 
 ## Media
@@ -18,4 +18,4 @@
 
 ## Operations
 
-- [Development](https://volpestyle.github.io/docs/clankvox/?doc=development): Build and test commands, logging knobs, high-value edit locations, and Bun coordination points.
+- [Development](https://volpestyle.github.io/docs/clankvox/?doc=development): Build and test commands, logging knobs, high-value edit locations, and Clanky coordination points.

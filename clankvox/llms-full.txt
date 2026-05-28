@@ -1,6 +1,6 @@
 # ClankVox - Full Docs
 
-> ClankVox is the Rust media plane that Clanky delegates Discord voice and Go Live transport to: RTP, Opus, DAVE, H264/VP8, playback pacing, and JSON-line IPC.
+> ClankVox is Clanky's main Rust package for voice and media transport. Its Discord implementation covers RTP, Opus, DAVE, H264/VP8, playback pacing, Go Live, and JSON-line IPC.
 
 Generated from the live docs site. Each section below is one page; see the heading and source path for context.
 
@@ -12,17 +12,23 @@ Source: `README.md` - https://volpestyle.github.io/docs/clankvox/?doc=overview
 
 # ClankVox
 
-ClankVox is the Rust media-plane subprocess for Clanky's Discord voice and
-Go Live features.
+ClankVox is Clanky's main Rust package for voice and media transport. It is the
+native media plane Clanky delegates to when a platform needs realtime sockets,
+codec work, packet timing, encryption, or low-level media telemetry.
+
+ClankVox handles Discord voice and Go Live, and future platform-specific
+voice/media transports should live at the same layer.
 
 Clanky stays agentic: prompts, settings, gateway control, Realtime sessions,
 tools, Pi delegation, and product behavior. ClankVox stays deterministic:
-Discord voice transport, RTP/RTCP, Opus, DAVE, H264/VP8, playback pacing, music
-PCM, Go Live watch/publish, and JSON-line IPC.
+platform media transport mechanics, RTP/RTCP, codecs, transport encryption,
+playback pacing, media capture/publish, and JSON-line IPC. For Discord, that
+means Opus, DAVE, H264/VP8, music PCM, and Go Live watch/publish.
 
 ## 1. What You Can Do
 
-ClankVox makes these Clanky voice workflows possible:
+ClankVox makes native media workflows available to Clanky. Its Discord-backed
+workflows include:
 
 - join a Discord voice channel and capture speaker audio
 - stream assistant speech or music back into Discord with correct pacing
@@ -38,7 +44,8 @@ ClankVox makes these Clanky voice workflows possible:
 
 ## 2. What Clanky Lets ClankVox Handle
 
-Clanky delegates the transport work that should not live in the Node runtime:
+Clanky delegates realtime media transport work that should not live in the Node
+runtime. For Discord, that includes:
 
 - Discord voice and stream-server sockets
 - UDP/RTP send and receive
@@ -56,29 +63,38 @@ search, or delegate. It reports transport truth. Clanky applies product policy.
 
 ```mermaid
 flowchart TB
+  platforms["Platform media surfaces"]
   discord["Discord voice and stream servers"]
+  future["Future platform transports"]
   clanky["Clanky Node runtime<br/>control plane, Realtime, tools, policy"]
   ipc["JSON-line IPC"]
   vox["ClankVox Rust media plane"]
-  voice["voice<br/>audio capture + playback"]
-  watch["stream_watch<br/>Go Live receive"]
-  publish["stream_publish<br/>Go Live send"]
-  media["RTP, Opus, DAVE, H264/VP8, PCM"]
+  transports["Transport implementations"]
+  voice["Discord voice<br/>audio capture + playback"]
+  watch["Discord stream_watch<br/>Go Live receive"]
+  publish["Discord stream_publish<br/>Go Live send"]
+  media["RTP, codecs, encryption, PCM"]
 
   clanky <--> ipc
   ipc <--> vox
-  vox --> voice
-  vox --> watch
-  vox --> publish
+  vox --> transports
+  transports --> voice
+  transports --> watch
+  transports --> publish
+  transports -.-> future
   voice --> media
   watch --> media
   publish --> media
+  platforms --> discord
+  platforms --> future
   media <--> discord
 ```
 
-The `voice` role is the anchor Discord voice connection. `stream_watch` and
-`stream_publish` are separate stream-server legs because Go Live is not just an
-extra field on the normal voice socket.
+The Discord transport exposes three roles. `voice` is the anchor voice
+connection. `stream_watch` and `stream_publish` are separate stream-server legs
+because Discord Go Live is not just an extra field on the normal voice socket.
+Future platform transports can add their own roles while keeping product policy
+in Clanky and media mechanics in ClankVox.
 
 ## Runtime Shape
 
@@ -102,8 +118,8 @@ Most behavior is split across supervisor-style modules:
   playback and periodic send tick
 - [src/stream_publish.rs](./src/stream_publish.rs): outbound Go Live sender
   pipeline
-- [src/voice_conn.rs](./src/voice_conn.rs): Discord voice WebSocket, UDP, RTP,
-  codec negotiation, DAVE, and packetization
+- [src/voice_conn.rs](./src/voice_conn.rs): Discord voice/stream transport,
+  WebSocket, UDP, RTP, codec negotiation, DAVE, and packetization
 - [src/ipc.rs](./src/ipc.rs): Clanky <-> Rust message contracts
 
 ## What To Read
@@ -136,8 +152,10 @@ pnpm voice:native:test
 pnpm voice:build
 ```
 
-## Current Boundaries
+## Discord Boundaries
 
+- ClankVox is Clanky's main package for native voice/media transports; Discord
+  voice and Go Live are the implemented transport family.
 - Inbound native screen watch is integrated end to end through `stream_watch`.
 - Outbound publish exists and is intentionally narrow: YouTube-backed
   music/video URLs plus browser-session PNG frames, H264 sender transport, and
@@ -154,44 +172,57 @@ Source: `docs/diagram.md` - https://volpestyle.github.io/docs/clankvox/?doc=diag
 
 # ClankVox Diagram
 
-This is the media-plane map for how `clankvox` fits under Clanky.
+This is the media-plane map for how `clankvox` fits under Clanky. ClankVox is
+Clanky's main native package for voice and media transport; Discord voice and Go
+Live are the implemented transport family.
 
 ```mermaid
 flowchart TB
-  user[Discord voice and Go Live users]
+  user[People in media sessions]
+  surfaces[Platform media surfaces]
   discord[Discord voice and stream servers]
+  future[Future platform media transports]
   clanky[Clanky Node runtime]
   ipc[JSON-line IPC]
   vox[clankvox Rust media plane]
-  voice[voice role]
-  watch[stream_watch role]
-  publish[stream_publish role]
-  dave[DAVE and transport crypto]
-  audio[Opus, PCM, RTP audio]
-  video[H264, VP8, RTP video]
+  family[transport implementations]
+  voice[Discord voice role]
+  watch[Discord stream_watch role]
+  publish[Discord stream_publish role]
+  crypto[transport crypto]
+  audio[codecs, PCM, RTP audio]
+  video[codecs, RTP video]
 
-  user <--> discord
+  user <--> surfaces
+  surfaces <--> discord
+  surfaces -.-> future
   clanky <--> ipc
   ipc <--> vox
-  vox --> voice
-  vox --> watch
-  vox --> publish
-  voice --> dave
-  watch --> dave
-  publish --> dave
-  dave --> audio
-  dave --> video
+  vox --> family
+  family --> voice
+  family --> watch
+  family --> publish
+  family -.-> future
+  voice --> crypto
+  watch --> crypto
+  publish --> crypto
+  crypto --> audio
+  crypto --> video
   audio <--> discord
   video <--> discord
 ```
 
 ## Ownership Split
 
-- Clanky owns prompts, settings, Discord gateway control, tools, and product behavior.
-- `clankvox` owns Discord media sockets, UDP/RTP, codec framing, DAVE, encryption, audio capture, playback pacing, and native Go Live transport.
+- Clanky owns prompts, settings, platform gateway control, tools, and product
+  behavior.
+- `clankvox` owns native media sockets, UDP/RTP, codec framing, transport
+  encryption, audio capture, playback pacing, and platform media telemetry.
+- The Discord transport adds Discord voice/stream sockets, DAVE, and native Go
+  Live watch/publish roles.
 - IPC is the boundary. Stdout is JSON-line protocol; stderr is transport logging.
 
-## Runtime Roles
+## Discord Runtime Roles
 
 - `voice`: the anchor voice connection for capture and playback.
 - `stream_watch`: inbound Go Live receive.
@@ -207,29 +238,37 @@ Source: `docs/architecture.md` - https://volpestyle.github.io/docs/clankvox/?doc
 
 # clankvox Architecture
 
-This document is the transport/media-plane view of the system.
+This document is the transport/media-plane view of ClankVox.
+
+ClankVox is Clanky's main Rust package for voice and media transport. It
+handles Discord voice and Go Live, and the boundary is intended to hold for
+future platform transports that need native media sockets, codec work, packet
+timing, encryption, or low-level telemetry below Clanky's Node runtime.
 
 ## Ownership Boundary
 
-Bun owns:
+Clanky's TypeScript runtime owns:
 
-- the selfbot gateway session
-- stream discovery dispatch handling
+- platform gateway/session control outside the raw media transport
+- Discord selfbot gateway session and stream discovery dispatch handling
 - session orchestration and product logic
 - tools, prompts, settings, and commentary decisions
-- decoding native watch frames into JPEG for the higher-level screen-watch pipeline
+- decoding native watch frames into JPEG for the higher-level screen-watch
+  pipeline
 
 `clankvox` owns:
 
+- platform-specific realtime media sockets
 - Discord voice and stream-server sockets
 - UDP/RTP send and receive
 - codec advertisement and media framing
 - DAVE lifecycle and media encryption/decryption
 - capture events and media telemetry
 - TTS/music playback pacing
-- outbound native Go Live video packetization
+- outbound native Go Live video packetization in the Discord transport
 
-That split is important. `clankvox` should stay transport-native and deterministic. Bun should stay agentic and product-facing.
+That split is important. `clankvox` should stay transport-native and
+deterministic. Clanky should stay agentic and product-facing.
 
 ## Process Model
 
@@ -237,7 +276,7 @@ The entrypoint in [../src/main.rs](../src/main.rs) creates one long-lived `AppSt
 
 The loop reacts to five sources:
 
-- inbound IPC messages from Bun
+- inbound IPC messages from the Clanky runtime
 - `VoiceEvent` messages from active transport connections
 - `MusicEvent` messages from the ffmpeg/yt-dlp music pipeline
 - reconnect deadlines
@@ -249,7 +288,7 @@ That shape keeps transport logic serialized through `AppState` even though lower
 
 [../src/app_state.rs](../src/app_state.rs) is the shared spine. It holds:
 
-- primary voice connection and pending voice connect inputs
+- Discord primary voice connection and pending voice connect inputs
 - `stream_watch` connection state and its own DAVE slot
 - `stream_publish` connection state and its own DAVE slot
 - audio send state for outbound voice playback
@@ -259,9 +298,15 @@ That shape keeps transport logic serialized through `AppState` even though lower
 - stream publish runtime state
 - reconnect bookkeeping
 
-The important architectural choice is that each transport role has its own connection slot and its own DAVE manager. Go Live is not modeled as “extra fields on the main voice socket.”
+The important architectural choice is that each Discord transport role has its
+own connection slot and its own DAVE manager. Go Live is not modeled as “extra
+fields on the main voice socket.” Future transport families should follow the
+same shape when their media roles have distinct lifecycle or encryption state.
 
-## Transport Roles
+## Discord Transport Roles
+
+The roles below are the Discord implementation. They are not the full product
+definition of ClankVox.
 
 ### `voice`
 
@@ -276,16 +321,16 @@ The main voice leg for:
 
 A separate stream-server connection used only for inbound Go Live receive:
 
-- connects with `rtc_server_id` and stream credentials from Bun
+- connects with `rtc_server_id` and stream credentials from Clanky
 - receives remote OP12/OP18 video state
-- decrypts video and forwards encoded frames to Bun over IPC
+- decrypts video and forwards encoded frames to Clanky over IPC
 - never owns the main audio session
 
 ### `stream_publish`
 
 A separate stream-server connection used only for outbound Go Live send:
 
-- connects with self-owned stream credentials from Bun
+- connects with self-owned stream credentials from Clanky
 - advertises sender-side H264 support
 - announces video state to Discord
 - packetizes and transmits outbound H264 access units
@@ -322,7 +367,7 @@ Owns:
 
 Owns:
 
-- audio playback commands from Bun
+- audio playback commands from Clanky
 - music lifecycle events
 - queue draining on the 20ms tick
 - buffer depth and TTS playback telemetry
@@ -341,7 +386,7 @@ Owns:
 
 ## IPC Contract
 
-[../src/ipc.rs](../src/ipc.rs) is the Bun contract.
+[../src/ipc.rs](../src/ipc.rs) is the Clanky runtime contract.
 
 Inbound commands are grouped into four conceptual families:
 
@@ -372,7 +417,7 @@ Outbound events are also grouped:
 
 ## Why The Architecture Looks This Way
 
-The big driver is DAVE and Go Live.
+The Discord implementation is shaped by DAVE and Go Live.
 
 Songbird-level abstractions were not sufficient because:
 
@@ -381,7 +426,11 @@ Songbird-level abstractions were not sufficient because:
 - Go Live uses a second stream-server connection with different state and lifecycle needs
 - sender and receiver roles need different codec and announcement behavior
 
-That is why `clankvox` is a custom transport layer instead of a thin wrapper around an off-the-shelf Discord voice library.
+That is why the Discord implementation is a custom transport layer instead of a
+thin wrapper around an off-the-shelf Discord voice library. The same rule should
+apply to future transports: ClankVox owns platform media mechanics when a
+transport needs native timing, codecs, encryption, or telemetry; Clanky owns the
+agent behavior above it.
 
 ---
 
@@ -391,29 +440,37 @@ Source: `docs/audio-pipeline.md` - https://volpestyle.github.io/docs/clankvox/?d
 
 # Audio Pipeline
 
-This document covers the audio path inside `clankvox`: inbound user capture, outbound TTS/music playback, and the telemetry Bun relies on for floor control.
+This document covers the audio path inside `clankvox`: inbound user capture,
+outbound TTS/music playback, and the telemetry Clanky relies on for floor
+control. The Discord-backed implementation follows the same boundary future
+platform transports should keep too: ClankVox owns low-level media mechanics;
+Clanky owns agent policy.
 
 ## Scope
 
 Audio in `clankvox` has two big jobs:
 
-- turn Discord voice packets into Bun-visible user audio events
-- turn Bun-visible TTS/music/media commands into Discord voice playback
+- turn platform voice packets into Clanky-visible user audio events
+- turn Clanky-visible TTS/music/media commands into platform voice playback
+
+For the Discord transport, those packets are Discord RTP/Opus/DAVE frames on
+the `voice` role.
 
 Go Live video send/receive is documented separately in [go-live.md](./go-live.md).
 
 ## Inbound Audio Receive
 
-The main `voice` transport receives RTP packets from Discord and processes them in this order:
+The Discord `voice` transport receives RTP packets from Discord and processes
+them in this order:
 
 1. transport decrypt using the negotiated RTP-size AEAD mode
 2. RTP parse and SSRC lookup
 3. DAVE decrypt for the speaking user
 4. Opus decode to PCM
-5. channel conversion / resampling into Bun-facing capture format
+5. channel conversion / resampling into Clanky-facing capture format
 6. speaking and user-audio IPC emission
 
-At the Bun boundary, capture is exposed through events like:
+At the Clanky boundary, capture is exposed through events like:
 
 - `speaking_start`
 - `speaking_end`
@@ -429,25 +486,27 @@ Outbound playback is paced on the 20ms tick from [../src/main.rs](../src/main.rs
 
 Sources:
 
-- live TTS audio pushed from Bun over IPC
+- live TTS audio pushed from Clanky over IPC
 - music PCM produced by the local ffmpeg/yt-dlp pipeline
 
 The normal send path is:
 
-1. Bun sends PCM to `clankvox`
-2. `clankvox` buffers and normalizes it for Discord send
+1. Clanky sends PCM to `clankvox`
+2. `clankvox` buffers and normalizes it for platform send
 3. on each 20ms tick, the next frame is encoded to Opus
 4. DAVE encrypt runs when the session is in encrypted mode
 5. transport AEAD encrypt wraps the RTP payload
 6. packet is sent over UDP
 
-This is why Bun does not send Opus frames directly. `clankvox` keeps the pacing and encryption truth local to the transport layer.
+This is why Clanky does not send Opus frames directly in the Discord transport.
+`clankvox` keeps pacing, codec, and encryption truth local to the transport
+layer.
 
 ## Music Playback
 
 Music is implemented as a local subprocess pipeline in [../src/music.rs](../src/music.rs).
 
-For the current repo shape, music playback typically:
+Music playback typically:
 
 - resolves media with `yt-dlp`
 - decodes to raw PCM with `ffmpeg`
@@ -459,13 +518,13 @@ Music also emits lifecycle events back into the main loop, including:
 - `music_error`
 - `music_gain_reached`
 
-Those events let Bun coordinate reply handoff, ducking, and the current Go Live sender lifecycle.
+Those events let Clanky coordinate reply handoff, ducking, and the Go Live sender lifecycle.
 
 ## TTS Buffering And Telemetry
 
-Bun intentionally does not assume audio is “done” as soon as it has sent all PCM to the subprocess.
+Clanky intentionally does not assume audio is “done” as soon as it has sent all PCM to the subprocess.
 
-`clankvox` emits playback telemetry so Bun can reason about actual floor occupancy:
+`clankvox` emits playback telemetry so Clanky can reason about actual floor occupancy:
 
 - `buffer_depth`
 - `tts_playback_state`
@@ -489,7 +548,7 @@ Examples:
 - it reports PCM bytes and end-of-capture boundaries
 - it reports that buffered TTS still exists
 
-Bun then decides:
+Clanky then decides:
 
 - whether the capture promotes into a turn
 - whether it interrupts current playback
@@ -508,10 +567,12 @@ That boundary is deliberate. The subprocess should not become a policy engine.
 
 ## Important Constraints
 
-- playback pacing is owned locally by `clankvox`, not Bun
-- audio transport truth is ultimately the subprocess state, not just Bun-side queued bytes
+- playback pacing is owned locally by `clankvox`, not Clanky
+- audio transport truth is ultimately the subprocess state, not just Clanky-side queued bytes
 - DAVE transitions can temporarily change whether frames are encrypted or passthrough
-- buffer telemetry is operational truth but not durable forever; Bun still ages stale positive samples on its side
+- buffer telemetry is operational truth but not durable forever; Clanky still ages stale positive samples on its side
+- future platform transports should expose the same capture/playback truth over
+  IPC instead of moving floor-control policy into `clankvox`
 
 ---
 
@@ -521,13 +582,17 @@ Source: `docs/go-live.md` - https://volpestyle.github.io/docs/clankvox/?doc=go-l
 
 # Go Live: Native Screen Watch And Self Publish
 
-This document consolidates the `clankvox` view of Discord Go Live.
+This document consolidates the Discord Go Live transport inside `clankvox`.
+
+ClankVox is Clanky's main native package for voice and media transport. Go Live
+is the first video-heavy platform implementation living there, not the whole
+scope of the crate.
 
 It covers:
 
 - inbound native screen watch (`stream_watch`)
 - outbound native self publish (`stream_publish`)
-- how Bun and the selfbot gateway feed stream credentials into the subprocess
+- how Clanky and the selfbot gateway feed stream credentials into the subprocess
 
 ## Mental Model
 
@@ -538,11 +603,12 @@ The main voice connection and the Go Live stream connection are separate legs:
 - main voice leg: normal audio send/receive, speaking, voice session identity
 - stream leg: video receive or send, stream-specific SSRCs, stream-server credentials
 
-That is why `clankvox` models Go Live as extra transport roles instead of trying to force everything through the primary `voice` slot.
+That is why the Discord transport models Go Live as extra transport roles
+instead of trying to force everything through the primary `voice` slot.
 
 ## Control Plane Vs Media Plane
 
-Bun and the selfbot gateway own the control plane:
+Clanky and the selfbot gateway own the control plane:
 
 - raw gateway dispatch handling
 - stream discovery
@@ -552,7 +618,7 @@ Bun and the selfbot gateway own the control plane:
 - OP22 `STREAM_SET_PAUSED`
 - deciding which session should attach to which stream
 
-`clankvox` owns the media plane:
+`clankvox` owns the Discord media plane:
 
 - stream-server WebSocket connection
 - UDP media send/receive
@@ -563,7 +629,7 @@ Bun and the selfbot gateway own the control plane:
 
 ## Shared Stream Facts
 
-For both watch and publish, Bun eventually supplies:
+For both watch and publish, Clanky eventually supplies:
 
 - stream endpoint
 - stream token
@@ -572,41 +638,41 @@ For both watch and publish, Bun eventually supplies:
 - self user id
 - DAVE channel id
 
-The current DAVE channel derivation for stream connections is:
+The DAVE channel derivation for stream connections is:
 
 ```text
 BigInt(rtc_server_id) - 1
 ```
 
-That value is computed in Bun and passed to `clankvox` over IPC.
+That value is computed in Clanky and passed to `clankvox` over IPC.
 
 ## `stream_watch` Flow
 
-Inbound native watch currently works like this:
+Inbound native watch works like this:
 
-1. Bun discovers an active Go Live stream for a target user
-2. Bun sends OP20 `STREAM_WATCH`
+1. Clanky discovers an active Go Live stream for a target user
+2. Clanky sends OP20 `STREAM_WATCH`
 3. Discord returns `STREAM_CREATE` and `STREAM_SERVER_UPDATE`
-4. Bun calls `stream_watch_connect`
+4. Clanky calls `stream_watch_connect`
 5. `clankvox` opens the stream-server transport
 6. Discord sends video state and media
 7. `clankvox` decrypts/depacketizes frames and emits:
    - `user_video_state`
    - `user_video_frame`
    - `user_video_end`
-8. Bun decodes sampled VP8 keyframes and H264 IDR access units to JPEG and feeds the higher-level screen-watch pipeline
+8. Clanky decodes sampled VP8 keyframes and H264 IDR access units to JPEG and feeds the higher-level screen-watch pipeline
 
-The receiver path supports H264 and VP8 receive in the current code.
+The receiver path supports H264 and VP8 receive.
 
 ## `stream_publish` Flow
 
-Outbound self publish currently works like this:
+Outbound self publish works like this:
 
-1. Bun decides to publish a self-owned stream
-2. if needed, Bun sends OP18 `STREAM_CREATE`
-3. Bun sends OP22 `STREAM_SET_PAUSED { paused: false }`
+1. Clanky decides to publish a self-owned stream
+2. if needed, Clanky sends OP18 `STREAM_CREATE`
+3. Clanky sends OP22 `STREAM_SET_PAUSED { paused: false }`
 4. Discord returns self stream discovery and credentials
-5. Bun calls:
+5. Clanky calls:
    - `stream_publish_connect`
    - `stream_publish_play` for URL-backed publish, or
    - `stream_publish_browser_start` followed by repeated `stream_publish_browser_frame`
@@ -619,18 +685,19 @@ Outbound self publish currently works like this:
 
 Pause/resume/stop are split cleanly:
 
-- pause: Bun sends OP22 paused true and `stream_publish_pause`
-- resume: Bun reuses the existing stream when possible and sends OP22 paused false plus `stream_publish_resume`
-- stop: Bun sends OP19 `STREAM_DELETE` and `stream_publish_stop` / `stream_publish_disconnect`
+- pause: Clanky sends OP22 paused true and `stream_publish_pause`
+- resume: Clanky reuses the existing stream when possible and sends OP22 paused false plus `stream_publish_resume`
+- stop: Clanky sends OP19 `STREAM_DELETE` and `stream_publish_stop` / `stream_publish_disconnect`
 
-## Current Sender Boundary
+## Sender Boundary
 
-The sender path exists, but it is not yet a general-purpose arbitrary video publisher.
+The Discord sender path exists, but it is not yet a general-purpose arbitrary
+video publisher.
 
-Current rollout:
+Rollout:
 
-- publish lifecycle is currently tied to Bun-owned source orchestration
-- source support is intentionally narrow and currently centered on:
+- publish lifecycle is tied to Clanky-owned source orchestration
+- source support is intentionally narrow and centered on:
   - YouTube-backed music/video URLs
   - browser-session PNG frames captured from `BrowserManager`
 - sender codec is H264
@@ -638,7 +705,8 @@ Current rollout:
 
 ## Why `voice_conn.rs` Is So Large
 
-[../src/voice_conn.rs](../src/voice_conn.rs) owns the protocol-heavy work for both normal voice and Go Live:
+[../src/voice_conn.rs](../src/voice_conn.rs) owns the protocol-heavy work for
+the Discord implementation: both normal voice and Go Live.
 
 - role-aware identify and select-protocol payloads
 - READY parsing and stream SSRC extraction
@@ -664,20 +732,20 @@ The sibling reference repos were useful for the shape of the solution:
 
 `clankvox` does not copy those projects directly. They were used as transport evidence while the implementation stayed aligned with this repo’s DAVE-aware runtime.
 
-## Current Status
+## Status
 
 ### Inbound watch
 
 - integrated end to end
 - live validated through the selfbot runtime
-- Bun already consumes encoded frames and feeds the screen-watch system
+- Clanky already consumes encoded frames and feeds the screen-watch system
 
 ### Outbound publish
 
 - implemented in code
 - Rust sender path is covered by crate tests
-- Bun control-plane lifecycle has focused tests for create/resume/switch behavior
-- Bun browser-session share path forwards live browser frames into the sender transport with focused test coverage
+- Clanky control-plane lifecycle has focused tests for create/resume/switch behavior
+- Clanky browser-session share path forwards live browser frames into the sender transport with focused test coverage
 - live Discord sender validation is still the remaining gap
 
 ## Key Files
@@ -745,7 +813,7 @@ but the frame bodies are actually encrypted — feeding them to a decoder
 produces `deblocking_filter_idc out of range` and `reference count overflow`
 errors characteristic of encrypted data being parsed as H264.
 
-Current behavior: video frames that fail DAVE decrypt with
+Behavior: video frames that fail DAVE decrypt with
 `UnencryptedWhenPassthroughDisabled` are validated by `looks_like_valid_h264()`
 and **dropped** when they appear to be encrypted. Audio passthrough is still
 allowed.
@@ -754,7 +822,7 @@ The first few frames after DAVE session commit sometimes arrive genuinely
 unencrypted (the sender hasn't started encrypting yet). When those frames
 contain a real IDR (`nal_types=[7, 8, 6, 5]`), they decode successfully and
 bootstrap the screen watch pipeline. After that initial window, DAVE-encrypted
-frames are dropped and no new frames reach Bun until the next unencrypted IDR
+frames are dropped and no new frames reach Clanky until the next unencrypted IDR
 or a session reconnect.
 
 Fixing Go Live DAVE decrypt requires either:
@@ -768,8 +836,8 @@ Fixing Go Live DAVE decrypt requires either:
 H264 decode is handled entirely in-process by clankvox's persistent OpenH264
 decoder (`video_decoder.rs`). H264 frames do not use ffmpeg.
 
-VP8 still uses per-frame ffmpeg decode on the Bun side. The ffmpeg raw demuxer
-hangs on single-frame input; Bun works around this by piping through
+VP8 still uses per-frame ffmpeg decode on the Clanky side. The ffmpeg raw demuxer
+hangs on single-frame input; Clanky works around this by piping through
 `cat | ffmpeg -fflags +genpts -f ivf -i pipe:0` which guarantees clean pipe
 close and EOF delivery.
 
@@ -810,7 +878,7 @@ Format:
 cargo fmt
 ```
 
-From the repo root, Bun uses:
+From the Clanky repo root, the TypeScript wrapper uses:
 
 ```sh
 bun run build:voice
@@ -831,7 +899,8 @@ Useful knobs:
 - `RUST_LOG=debug` when you need transport detail
 - `AUDIO_DEBUG=1` when you need more audio-path IPC logging
 
-The subprocess intentionally keeps the Bun IPC channel separate from logs. Stdout is for JSON-line IPC. Stderr is for operator logs.
+The subprocess intentionally keeps the Clanky IPC channel separate from logs.
+Stdout is for JSON-line IPC. Stderr is for operator logs.
 
 ## High-Value Edit Locations
 
@@ -855,12 +924,12 @@ If you are changing…
   - [../src/stream_publish.rs](../src/stream_publish.rs)
   - [../src/voice_conn.rs](../src/voice_conn.rs)
   - [../src/connection_supervisor.rs](../src/connection_supervisor.rs)
-- Bun IPC contracts:
+- Clanky IPC contracts:
   - [../src/ipc.rs](../src/ipc.rs)
   - [../src/ipc_protocol.rs](../src/ipc_protocol.rs)
   - [../../clankvoxClient.ts](../../clankvoxClient.ts)
 
-## Coordination With Bun
+## Coordination With Clanky
 
 `clankvox` almost never changes alone.
 
@@ -901,7 +970,7 @@ When you add a new transport event or command, update both sides in the same cha
 - DAVE transition handling is protocol-sensitive and easy to break with “small” changes
 - stream-server behavior is role-specific; a fix for `voice` is not automatically correct for `stream_watch` or `stream_publish`
 - sender and receiver video paths share protocol code, but not identical lifecycle expectations
-- Bun may look logically correct while `clankvox` still has buffered playback; trust subprocess telemetry for floor state
+- Clanky may look logically correct while `clankvox` still has buffered playback; trust subprocess telemetry for floor state
 
 ## Related Context
 
