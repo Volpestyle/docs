@@ -22,7 +22,7 @@ voice/media transports should live at the same layer.
 Clanky stays agentic: prompts, settings, gateway control, Realtime sessions,
 tools, Pi delegation, and product behavior. ClankVox stays deterministic:
 platform media transport mechanics, RTP/RTCP, codecs, transport encryption,
-playback pacing, media capture/publish, and JSON-line IPC. For Discord, that
+playback pacing, media capture/publish, and IPC. For Discord, that
 means Opus, DAVE, H264/VP8, music PCM, and Go Live watch/publish.
 
 ## 1. What You Can Do
@@ -67,7 +67,7 @@ flowchart TB
   discord["Discord voice and stream servers"]
   future["Future platform transports"]
   clanky["Clanky Node runtime<br/>control plane, Realtime, tools, policy"]
-  ipc["JSON-line IPC"]
+  ipc["stdin line JSON<br/>stdout framed messages"]
   vox["ClankVox Rust media plane"]
   transports["Transport implementations"]
   voice["Discord voice<br/>audio capture + playback"]
@@ -900,7 +900,9 @@ Useful knobs:
 - `AUDIO_DEBUG=1` when you need more audio-path IPC logging
 
 The subprocess intentionally keeps the Clanky IPC channel separate from logs.
-Stdout is for JSON-line IPC. Stderr is for operator logs.
+Stdin accepts line-delimited JSON commands. Stdout emits framed IPC messages
+with a tag byte and payload length so audio/video payloads do not collide with
+logs. Stderr is for operator logs.
 
 ## High-Value Edit Locations
 
