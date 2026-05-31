@@ -32,8 +32,9 @@ Markdown can link across docs sites with the `docs://` scheme:
 
 The shell resolves those links through each site's `siteLinks` config. Published
 docs use the shared GitHub Pages host at `https://volpestyle.github.io/docs/`;
-local docs can override them with env vars such as `DOCS_AGENT_ROOM_URL`,
-`DOCS_CLANKY_URL`, and `DOCS_CLANKVOX_URL`.
+local Vite docs can override them with env vars such as
+`VITE_DOCS_AGENT_ROOM_URL`, `VITE_DOCS_CLANKY_URL`,
+`VITE_DOCS_AGENT_ROOM_IOS_URL`, and `VITE_DOCS_CLANKVOX_URL`.
 
 ## Hosting
 

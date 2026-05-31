@@ -1,0 +1,36 @@
+[
+	{
+		"id": "clanky-docs",
+		"slug": "clanky",
+		"label": "Clanky",
+		"title": "Clanky",
+		"description": "Personal Pi agent docs for profiles, memory, Discord, voice, media, skills, and AgentRoom participation."
+	},
+	{
+		"id": "agent-room-docs",
+		"slug": "agent-room",
+		"label": "AgentRoom",
+		"title": "AgentRoom",
+		"description": "Terminal control room docs for seeing, launching, steering, and auditing long-running coding agents."
+	},
+	{
+		"id": "agent-room-ios-docs",
+		"slug": "agent-room-ios",
+		"label": "AgentRoom iOS",
+		"title": "AgentRoom iOS",
+		"description": "Native iOS client docs for checking and steering AgentRoom from a phone.",
+		"parentId": "agent-room-docs",
+		"relationLabel": "mobile client",
+		"metaLabel": "AgentRoom client"
+	},
+	{
+		"id": "clankvox-docs",
+		"slug": "clankvox",
+		"label": "ClankVox",
+		"title": "ClankVox",
+		"description": "Rust media-plane submodule docs for Clanky's Discord voice and Go Live transport.",
+		"parentId": "clanky-docs",
+		"relationLabel": "voice/media module",
+		"metaLabel": "Clanky submodule"
+	}
+]

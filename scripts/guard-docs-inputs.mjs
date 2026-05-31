@@ -12,6 +12,15 @@ const errors = [];
 let rawImportCount = 0;
 
 try {
+	const docsAppRootStat = await stat(docsAppRoot).catch((error) => {
+		if (error && error.code === "ENOENT") {
+			throw new Error(`Docs app path does not exist: ${path.relative(repoRoot, docsAppRoot)}`);
+		}
+		throw error;
+	});
+	if (!docsAppRootStat.isDirectory()) {
+		throw new Error(`Docs app path is not a directory: ${path.relative(repoRoot, docsAppRoot)}`);
+	}
 	for (const sourceRoot of sourceRoots) {
 		const sourceRootStat = await stat(sourceRoot).catch((error) => {
 			if (error && error.code === "ENOENT") {

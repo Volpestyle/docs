@@ -68,6 +68,6 @@ Cross-site links resolve against `site.siteLinks`:
 [AgentRoom iOS Overview](docs://agent-room-ios-docs/overview)
 ```
 
-Local dev can override published URLs with env vars such as
-`DOCS_AGENT_ROOM_URL`, `DOCS_CLANKY_URL`, `DOCS_AGENT_ROOM_IOS_URL`, and
-`DOCS_CLANKVOX_URL`.
+Local Vite dev can override published URLs with env vars such as
+`VITE_DOCS_AGENT_ROOM_URL`, `VITE_DOCS_CLANKY_URL`,
+`VITE_DOCS_AGENT_ROOM_IOS_URL`, and `VITE_DOCS_CLANKVOX_URL`.

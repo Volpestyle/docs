@@ -1,4 +1,4 @@
-import { readdir, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const publishRoot = process.argv[2];
@@ -8,28 +8,8 @@ if (!publishRoot) {
 	process.exit(1);
 }
 
-const knownSites = [
-	{
-		slug: "clanky",
-		title: "Clanky",
-		description: "Personal Pi agent docs for setup, operations, memory, Discord, voice, and AgentRoom participation.",
-	},
-	{
-		slug: "agent-room",
-		title: "AgentRoom",
-		description: "Coordination plane docs for rooms, runtimes, gateways, protocols, and local-first agent work.",
-	},
-	{
-		slug: "agent-room-ios",
-		title: "AgentRoom iOS",
-		description: "Native iOS client docs for checking and steering AgentRoom from a phone.",
-	},
-	{
-		slug: "clankvox",
-		title: "ClankVox",
-		description: "Rust media-plane docs for Discord voice, Go Live transport, audio, video, and IPC.",
-	},
-];
+const sitesRegistryUrl = new URL("../packages/night-compiler/src/agent-workspace-sites.json", import.meta.url);
+const knownSites = JSON.parse(await readFile(sitesRegistryUrl, "utf8"));
 
 const entries = await readdir(publishRoot, { withFileTypes: true });
 const publishedSlugs = new Set(entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name));
