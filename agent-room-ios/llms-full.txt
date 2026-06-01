@@ -76,15 +76,15 @@ supported from the connection screen.
 
 ```bash
 brew install xcodegen      # if not already installed
-xcodegen generate          # regenerate SwarmiOS.xcodeproj from project.yml
-open SwarmiOS.xcodeproj    # pick iPhone 17 Pro, Cmd+R
+xcodegen generate          # regenerate AgentRoomiOS.xcodeproj from project.yml
+open AgentRoomiOS.xcodeproj    # pick iPhone 17 Pro, Cmd+R
 ```
 
 Command line:
 
 ```bash
-xcodebuild -project SwarmiOS.xcodeproj \
-  -scheme SwarmiOS \
+xcodebuild -project AgentRoomiOS.xcodeproj \
+  -scheme AgentRoomiOS \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   build
 ```
@@ -101,8 +101,8 @@ pnpm docs:build
 ## Structure
 
 ```text
-SwarmiOS/
-  SwarmiOSApp.swift
+AgentRoomiOS/
+  AgentRoomiOSApp.swift
   RootView.swift
   Tokens/
   Models/
