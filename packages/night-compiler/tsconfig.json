@@ -9,6 +9,7 @@
 		"exactOptionalPropertyTypes": true,
 		"isolatedModules": true,
 		"verbatimModuleSyntax": true,
+		"resolveJsonModule": true,
 		"noEmit": true,
 		"skipLibCheck": true,
 		"types": ["node", "vite/client", "react", "react-dom"]

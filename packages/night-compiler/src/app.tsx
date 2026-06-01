@@ -339,11 +339,9 @@ function MobileNavigation({ config, activeSlug, search, onClose, onNavigate, onO
 function SiteLinks({
 	config,
 	className,
-	mode = "desktop",
 }: {
 	config: DocsSiteConfig;
 	className?: string;
-	mode?: "desktop" | "mobile" | "sidebar";
 }) {
 	const links = config.site.siteLinks ?? [];
 	if (links.length === 0) {
@@ -361,12 +359,7 @@ function SiteLinks({
 
 	return (
 		<nav
-			className={cn(
-				"flex flex-wrap items-center gap-1",
-				mode === "mobile" && "items-stretch",
-				mode === "sidebar" && "flex-col flex-nowrap items-stretch gap-1",
-				className,
-			)}
+			className={cn("flex flex-col flex-nowrap items-stretch gap-1", className)}
 			aria-label="Documentation sites"
 		>
 			{topLevelLinks.map((link) => {
@@ -375,44 +368,23 @@ function SiteLinks({
 					return <SiteLinkPill key={link.id} link={link} isCurrent={link.id === config.site.id} />;
 				}
 
-				if (mode === "mobile" || mode === "sidebar") {
-					const isFamilyCurrent =
-						link.id === config.site.id || childLinks.some((childLink) => childLink.id === config.site.id);
-					return (
-						<span key={link.id} className="flex flex-col items-stretch">
-							<SiteLinkPill
-								link={link}
-								isCurrent={link.id === config.site.id}
-								familyHighlighted={isFamilyCurrent}
-							/>
-							<span className="ml-3 mt-1 flex flex-col gap-1 border-l pl-2">
-								{childLinks.map((childLink) => (
-									<SiteLinkPill
-										key={childLink.id}
-										link={childLink}
-										isCurrent={childLink.id === config.site.id}
-										isChild
-										parentLabel={link.label}
-										layout="submenu"
-									/>
-								))}
-							</span>
-						</span>
-					);
-				}
-
+				const isFamilyCurrent =
+					link.id === config.site.id || childLinks.some((childLink) => childLink.id === config.site.id);
 				return (
-					<span key={link.id} className="inline-flex items-center gap-1 rounded-lg border bg-muted/35 p-0.5">
-						<SiteLinkPill link={link} isCurrent={link.id === config.site.id} />
-						{childLinks.map((childLink) => (
-							<SiteLinkPill
-								key={childLink.id}
-								link={childLink}
-								isCurrent={childLink.id === config.site.id}
-								isChild
-								parentLabel={link.label}
-							/>
-						))}
+					<span key={link.id} className="flex flex-col items-stretch">
+						<SiteLinkPill link={link} isCurrent={link.id === config.site.id} familyHighlighted={isFamilyCurrent} />
+						<span className="ml-3 mt-1 flex flex-col gap-1 border-l pl-2">
+							{childLinks.map((childLink) => (
+								<SiteLinkPill
+									key={childLink.id}
+									link={childLink}
+									isCurrent={childLink.id === config.site.id}
+									isChild
+									parentLabel={link.label}
+									layout="submenu"
+								/>
+							))}
+						</span>
 					</span>
 				);
 			})}
@@ -514,7 +486,7 @@ function Sidebar({ config, activeSlug, search, onNavigate, onOpenSearch }: Sideb
 			{hasSiteLinks && (
 				<div className="flex flex-col gap-2 border-b p-4">
 					<div className="px-1 font-medium text-muted-foreground text-xs uppercase tracking-wider">Docs</div>
-					<SiteLinks config={config} mode="sidebar" />
+					<SiteLinks config={config} />
 				</div>
 			)}
 			<div className="flex flex-col gap-2 border-b p-4">

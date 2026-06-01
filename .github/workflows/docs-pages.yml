@@ -16,11 +16,15 @@ on:
       pnpm-version:
         required: false
         type: string
-        default: "11.0.0"
+        default: "11.4.0"
       build-command:
         required: false
         type: string
         default: "pnpm docs:build"
+      docs-app-path:
+        required: false
+        type: string
+        default: "apps/docs"
       artifact-path:
         required: false
         type: string
@@ -59,7 +63,7 @@ jobs:
         run: git clone --depth 1 https://github.com/Volpestyle/docs.git ../docs
 
       - name: Check docs source input guardrails
-        run: node ../docs/scripts/guard-docs-inputs.mjs .
+        run: node ../docs/scripts/guard-docs-inputs.mjs . "${{ inputs.docs-app-path }}"
 
       - name: Setup Node
         uses: actions/setup-node@v6
