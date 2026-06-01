@@ -12,7 +12,11 @@ const sitesRegistryUrl = new URL("../packages/night-compiler/src/agent-workspace
 const knownSites = JSON.parse(await readFile(sitesRegistryUrl, "utf8"));
 
 const entries = await readdir(publishRoot, { withFileTypes: true });
-const publishedSlugs = new Set(entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name));
+const publishedSlugs = new Set(
+	entries
+		.filter((entry) => entry.isDirectory() && isPublicSiteSlug(entry.name))
+		.map((entry) => entry.name),
+);
 const publishedSites = knownSites.filter((site) => publishedSlugs.has(site.slug));
 const unknownSites = [...publishedSlugs]
 	.filter((slug) => !knownSites.some((site) => site.slug === slug))
@@ -142,6 +146,10 @@ function titleFromSlug(slug) {
 		.filter(Boolean)
 		.map((part) => part[0].toUpperCase() + part.slice(1))
 		.join(" ");
+}
+
+function isPublicSiteSlug(slug) {
+	return /^[a-z0-9][a-z0-9-]*$/.test(slug);
 }
 
 function escapeHtml(value) {
