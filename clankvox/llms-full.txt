@@ -1,6 +1,6 @@
 # ClankVox - Full Docs
 
-> ClankVox is Clanky's main Rust package for voice and media transport. Its Discord implementation covers RTP, Opus, DAVE, H264/VP8, playback pacing, Go Live, and JSON-line IPC.
+> ClankVox is Clanky's main Rust package for voice and media transport. Its Discord implementation covers RTP, Opus, DAVE, H264/VP8, playback pacing, Go Live, stdin JSON lines, and stdout framed IPC.
 
 Generated from the live docs site. Each section below is one page; see the heading and source path for context.
 
@@ -183,7 +183,7 @@ flowchart TB
   discord[Discord voice and stream servers]
   future[Future platform media transports]
   clanky[Clanky Node runtime]
-  ipc[JSON-line IPC]
+  ipc[stdin JSON lines<br/>stdout framed IPC]
   vox[clankvox Rust media plane]
   family[transport implementations]
   voice[Discord voice role]
@@ -220,7 +220,8 @@ flowchart TB
   encryption, audio capture, playback pacing, and platform media telemetry.
 - The Discord transport adds Discord voice/stream sockets, DAVE, and native Go
   Live watch/publish roles.
-- IPC is the boundary. Stdout is JSON-line protocol; stderr is transport logging.
+- IPC is the boundary. Stdin accepts JSON lines, stdout emits framed IPC
+  messages, and stderr is transport logging.
 
 ## Discord Runtime Roles
 
