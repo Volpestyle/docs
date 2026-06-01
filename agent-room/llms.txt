@@ -16,13 +16,13 @@
 
 ## Operations
 
-- [Coordination Model](https://volpestyle.github.io/docs/agent-room/?doc=coordination): Native room messages, handoffs, status, task shadows, escalation, and external tracker split.
+- [Coordination Model](https://volpestyle.github.io/docs/agent-room/?doc=coordination): Room messages, handoffs, status, agent-state signals, escalation, and the configured work tracker.
 - [Runtime Providers](https://volpestyle.github.io/docs/agent-room/?doc=runtimes): Provider-neutral runtime model, bindings, Herdr/tmux adapters, adoption, and where exact command flags live.
 
 ## Agents
 
 - [Skills And Protocols](https://volpestyle.github.io/docs/agent-room/?doc=skills-and-protocols): How public docs, agent skills, MCP, CLI references, and product protocols fit together without duplicating procedures.
-- [AgentRoom Protocol](https://volpestyle.github.io/docs/agent-room/?doc=protocol): Enrollment, room-native coordination, task shadows, tracker refs, runtime audit, and gateway ownership.
+- [AgentRoom Protocol](https://volpestyle.github.io/docs/agent-room/?doc=protocol): Enrollment, room-native coordination, the configured work tracker, runtime audit, and gateway ownership.
 
 ## Reference
 
