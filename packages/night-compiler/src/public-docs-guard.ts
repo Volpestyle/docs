@@ -31,7 +31,7 @@ export function validatePublicDocsInput(input: PublicDocsInput): void {
 		}
 		if (!isAllowedPublicDocsSource(normalizedSource)) {
 			errors.push(
-				`doc "${meta.title}" source "${meta.source}" is outside the public docs allowlist; only README.md and docs/**/*.md are publishable`,
+				`doc "${meta.title}" source "${meta.source}" is outside the public docs allowlist; only README.md and non-private docs/**/*.md are publishable`,
 			);
 		}
 		if (sources.has(normalizedSource)) {
@@ -74,7 +74,7 @@ export function assertPublicDocsSource(source: string): string {
 	const normalizedSource = normalizePublicDocsSource(source);
 	if (!normalizedSource || !isAllowedPublicDocsSource(normalizedSource)) {
 		throw new Error(
-			`Public docs guard rejected source "${source}". Only README.md and docs/**/*.md are publishable.`,
+			`Public docs guard rejected source "${source}". Only README.md and non-private docs/**/*.md are publishable.`,
 		);
 	}
 	return normalizedSource;
@@ -102,5 +102,10 @@ export function isAllowedPublicDocsSource(source: string): boolean {
 	if (source === "README.md") {
 		return true;
 	}
-	return source.startsWith("docs/") && source.endsWith(".md") && !source.split("/").some((part) => part.startsWith("."));
+	return (
+		source.startsWith("docs/") &&
+		source.endsWith(".md") &&
+		!source.startsWith("docs/private/") &&
+		!source.split("/").some((part) => part.startsWith("."))
+	);
 }

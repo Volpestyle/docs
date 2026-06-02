@@ -91,7 +91,7 @@ async function checkSourceFile(filePath) {
 		}
 		if (!isAllowedPublicDocsSource(repoRelativePath)) {
 			errors.push(
-				`${formatPath(filePath)} imports raw content "${repoRelativePath}", but public docs may only import README.md and docs/**/*.md`,
+				`${formatPath(filePath)} imports raw content "${repoRelativePath}", but public docs may only import README.md and non-private docs/**/*.md`,
 			);
 		}
 	}
@@ -101,7 +101,12 @@ function isAllowedPublicDocsSource(source) {
 	if (source === "README.md") {
 		return true;
 	}
-	return source.startsWith("docs/") && source.endsWith(".md") && !source.split("/").some((part) => part.startsWith("."));
+	return (
+		source.startsWith("docs/") &&
+		source.endsWith(".md") &&
+		!source.startsWith("docs/private/") &&
+		!source.split("/").some((part) => part.startsWith("."))
+	);
 }
 
 function formatPath(filePath) {

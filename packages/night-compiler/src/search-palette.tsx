@@ -12,8 +12,9 @@ import {
 	TerminalSquareIcon,
 	XIcon,
 } from "lucide-react";
-import { Dialog as DialogPrimitive } from "radix-ui";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
+	type ElementType,
 	type KeyboardEvent,
 	type ReactNode,
 	useCallback,
@@ -26,6 +27,10 @@ import {
 } from "react";
 
 import { cn } from "./lib/utils";
+
+const DialogOverlay = DialogPrimitive.Overlay as ElementType;
+const DialogContent = DialogPrimitive.Content as ElementType;
+const DialogTitle = DialogPrimitive.Title as ElementType;
 import { highlightSegments, type DocsSearch, type MatchRange, type SearchMatch } from "./search";
 import type { Doc, DocsSiteConfig } from "./types";
 
@@ -154,12 +159,12 @@ export function SearchPalette({ config, docsBySlug, open, onOpenChange, onNaviga
 	return (
 		<DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
 			<DialogPrimitive.Portal>
-				<DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-background/40 backdrop-blur-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-				<DialogPrimitive.Content
+				<DialogOverlay className="fixed inset-0 z-50 bg-background/40 backdrop-blur-sm data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+				<DialogContent
 					aria-describedby={undefined}
 					className="fixed top-[8vh] left-1/2 z-50 flex max-h-[80vh] w-[min(640px,calc(100vw-2rem))] -translate-x-1/2 flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-2xl outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
 				>
-					<DialogPrimitive.Title className="sr-only">Search documentation</DialogPrimitive.Title>
+					<DialogTitle className="sr-only">Search documentation</DialogTitle>
 
 					<div className="flex items-center gap-3 border-b px-4">
 						<SearchIcon className="size-4 shrink-0 text-muted-foreground" />
@@ -239,7 +244,7 @@ export function SearchPalette({ config, docsBySlug, open, onOpenChange, onNaviga
 							<span>Tip: press {isAppleLike() ? "⌘K" : "Ctrl+K"} anywhere</span>
 						)}
 					</footer>
-				</DialogPrimitive.Content>
+				</DialogContent>
 			</DialogPrimitive.Portal>
 		</DialogPrimitive.Root>
 	);
