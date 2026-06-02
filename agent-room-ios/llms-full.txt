@@ -42,7 +42,7 @@ flowchart LR
   phone["iPhone app"]
   tailnet["Private LAN / Tailscale"]
   daemon["agentroomd"]
-  room["AgentRoom room<br/>events, agents, tasks, runtime state"]
+  room["AgentRoom room<br/>events, agents, runtime state"]
 
   phone --> tailnet
   tailnet --> daemon
