@@ -64,13 +64,14 @@ tool access:
 - inspect the current repo and post a concise plan
 - launch or request helper workers when a task splits cleanly
 - ask reviewers for focused checks through room DMs
-- wait for messages, peer agent state, or human approval without polling
-  chat manually
+- wait for room messages, peer agent state, or human approval without polling
+  terminal panes or external chat surfaces manually
 - update the external tracker when durable work status changes
 - summarize runtime output for the operator instead of dumping raw logs
 - preserve terminal audit by letting AgentRoom handle runtime `send` and `read`
-- delegate voice, communication-gateway, web, media, or connector-specific work
-  to the agent with the right profile and skills
+- use AgentRoom native messages for room coordination, and delegate voice, web,
+  media, or connector-specific operations to the agent with the right profile
+  and skills
 
 The agent should not treat a terminal pane, chat channel, or tracker issue as
 the whole system. Those are surfaces. The room is the coordination model.
@@ -151,6 +152,9 @@ flowchart LR
 The surfaces are ways into the room. They are not the source of truth. The
 runtime provider controls process placement. The external tracker remains
 canonical for durable project work. AgentRoom keeps the active execution record.
+AgentRoom native messages are the room-chat path even when no external gateway
+is configured; chat gateways are optional projections to Discord, Slack, SMS, or
+similar conversations.
 
 ## Clanky In The Room
 
@@ -423,6 +427,19 @@ agent-room mobile-connect --copy
 Open the copied `agentroom://connect?...` link on the phone. The daemon URL and
 token are saved by the mobile client, and `/v1/*` routes require the bearer
 token when tailnet mode or `AGENTROOM_API_TOKEN` is active.
+
+After the iOS app has registered a device token, the daemon can send the current
+connection settings over APNs:
+
+```bash
+export AGENTROOM_APNS_KEY_PATH=/path/to/AuthKey_XXXXXXXXXX.p8
+export AGENTROOM_APNS_KEY_ID=XXXXXXXXXX
+export AGENTROOM_APNS_TEAM_ID=TEAMID1234
+agent-room mobile-connect --push
+```
+
+Use `AGENTROOM_APNS_BUNDLE_ID` and `AGENTROOM_APNS_ENV=production` when the app
+bundle id or APNs host differs from the default development build.
 
 <!-- Capture backlog:
 - docs/assets/gifs/mobile-room-check.gif: daemon pairing, phone connection, and a quick room status check.
@@ -1625,6 +1642,7 @@ agent-room init --runtime herdr --clanky --work-tracker linear --tracker-team te
 | `agent-room --daemon <url>`         | Open the dashboard against a non-default daemon URL.         |
 | `agent-room mobile-connect`         | Print AgentRoom iOS/mobile connection settings.              |
 | `agent-room mobile-connect --copy`  | Copy the `agentroom://connect?...` pairing link on macOS.    |
+| `agent-room mobile-connect --push`  | Send the connection settings to registered iOS devices.      |
 
 Useful options:
 
@@ -1635,6 +1653,16 @@ Useful options:
 | `--api-token <token>` | `daemon`, `agent-room` | Bearer token for remote clients. Prefer env for secrets. |
 | `--daemon <url>`      | `agent-room`           | Connect the TUI to an existing daemon.                   |
 | `--no-auto-start`     | `agent-room`           | Do not start a daemon if none is reachable.              |
+
+APNs push pairing requires daemon environment variables:
+
+| Env var                    | Purpose                                      |
+| -------------------------- | -------------------------------------------- |
+| `AGENTROOM_APNS_KEY_PATH`  | Path to the APNs provider `.p8` key.         |
+| `AGENTROOM_APNS_KEY_ID`    | Apple key id for that provider key.          |
+| `AGENTROOM_APNS_TEAM_ID`   | Apple Developer Team id.                     |
+| `AGENTROOM_APNS_BUNDLE_ID` | Optional app bundle id override.             |
+| `AGENTROOM_APNS_ENV`       | Optional APNs host: `sandbox` or `production`. |
 
 ## Runtime Providers
 
