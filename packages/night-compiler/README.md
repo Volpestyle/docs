@@ -16,10 +16,8 @@ The package owns the reusable docs UI:
 
 Each consumer repo owns only:
 
-- `apps/docs/src/docs-manifest.ts`
-- `apps/docs/src/content.ts`
-- `apps/docs/src/main.tsx`
-- `apps/docs/scripts/generate-llms.ts`
+- a docs app with `src/docs-manifest.ts`, `src/content.ts`, and `src/main.tsx`
+- a docs-app `scripts/generate-llms.ts`
 - repo-specific branding assets
 - a thin `.github/workflows/docs-pages.yml` caller
 
@@ -52,7 +50,7 @@ agent repositories private while still hosting one public docs website at
 The shared workflow enforces the public boundary before publish:
 
 - docs apps may raw-import only `README.md` and Markdown files under `docs/`
-- manifests may publish only `README.md` and `docs/**/*.md`
+- manifests may publish only `README.md` and non-private `docs/**/*.md`
 - generated artifacts fail if they contain source maps, source-code files,
   repository metadata, dependency locks, env files, or high-confidence secrets
 

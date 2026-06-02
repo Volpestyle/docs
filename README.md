@@ -43,10 +43,10 @@ publish only generated static output into this public repo's Pages branch under
 paths such as `/docs/clanky/` and `/docs/agent-room/`.
 
 By default, `README.md` and Markdown under `docs/` are candidates for public
-documentation. Put maintainer-only material under `docs/private/` when it
-contains local paths, session logs, restore points, credential-adjacent notes,
-or noisy implementation evidence that should not be part of the public product
-story.
+documentation, except `docs/private/**`, which is always rejected by the public
+docs guard. Put maintainer-only material under `docs/private/` when it contains
+local paths, session logs, restore points, credential-adjacent notes, or noisy
+implementation evidence that should not be part of the public product story.
 
 The publish workflow treats the public boundary as a hard gate. Project docs may
 only be built from explicit docs manifests; raw imports from source directories
