@@ -17,7 +17,7 @@
 ## Operations
 
 - [Coordination Model](https://volpestyle.github.io/docs/agent-room/?doc=coordination): Room messages, handoffs, status, agent-state signals, escalation, and the configured work tracker.
-- [Runtime Providers](https://volpestyle.github.io/docs/agent-room/?doc=runtimes): Provider-neutral runtime model, bindings, Herdr/tmux adapters, adoption, and where exact command flags live.
+- [Runtime Providers](https://volpestyle.github.io/docs/agent-room/?doc=runtimes): Provider-neutral runtime model, bindings, Herdr/Zellij/tmux adapters, adoption, and where exact command flags live.
 
 ## Agents
 

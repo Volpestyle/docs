@@ -27,14 +27,14 @@ from the desk.
 
 ## Which Surface Should I Use?
 
-| Need                                                | Start here                                                     |
-| --------------------------------------------------- | -------------------------------------------------------------- |
-| I want to know what all the agents are doing.       | Open `agent-room` and ask the operator chat.                   |
-| I want one personal agent with memory and communication gateways. | Start Clanky directly.                             |
-| I want Clanky plus other agents in one shared room. | Launch Clanky from AgentRoom as a Pi harness.                  |
-| I want to script room actions.                      | Use the AgentRoom CLI reference.                               |
-| I want to check the room from my phone.             | Pair AgentRoom iOS over a private tailnet.                     |
-| I want voice or Go Live through today's Discord adapter. | Use Clanky voice; ClankVox handles the native media transport. |
+| Need                                                              | Start here                                                     |
+| ----------------------------------------------------------------- | -------------------------------------------------------------- |
+| I want to know what all the agents are doing.                     | Open `agent-room` and ask the operator chat.                   |
+| I want one personal agent with memory and communication gateways. | Start Clanky directly.                                         |
+| I want Clanky plus other agents in one shared room.               | Launch Clanky from AgentRoom as a Pi harness.                  |
+| I want to script room actions.                                    | Use the AgentRoom CLI reference.                               |
+| I want to check the room from my phone.                           | Pair AgentRoom iOS over a private tailnet.                     |
+| I want voice or Go Live through today's Discord adapter.          | Use Clanky voice; ClankVox handles the native media transport. |
 
 ## 1. What You Can Do
 
@@ -42,7 +42,7 @@ Use AgentRoom as an agent command center:
 
 - open the TUI and ask the operator what is happening in plain language
 - see active agents, messages, runtime output, and recent audit events
-- launch workers into Herdr or tmux without leaving the room model
+- launch workers into Herdr, Zellij, or tmux without leaving the room model
 - send instructions and read output through audited AgentRoom commands
 - keep durable tracker issues canonical while room coordination stays local
 - let compatible agents inspect and update room context through their tools
@@ -90,7 +90,7 @@ flowchart TB
   user["Human operator<br/>TUI, CLI, phone, chat"]
   room["AgentRoom<br/>room state, messages, reports, audit, runtime control"]
   agents["Agents<br/>Clanky, Codex, Claude Code, Pi, Gemini CLI, shell/custom"]
-  providers["Room providers<br/>Herdr, tmux, chat gateways"]
+  providers["Room providers<br/>Herdr, Zellij, tmux, chat gateways"]
   external["Agent-owned tools<br/>Linear, GitHub, Figma, MCP, CLI"]
   media["ClankVox<br/>current Discord voice and Go Live media plane"]
 
@@ -138,6 +138,7 @@ flowchart LR
 
   subgraph runtimes["Runtime providers"]
     herdr["Herdr"]
+    zellij["Zellij"]
     tmux["tmux"]
     future["Docker / SSH / hosted"]
   end
@@ -185,14 +186,14 @@ jump to [ClankVox Overview](docs://clankvox-docs/overview).
 
 ## Repo Roles
 
-| Repo             | Role                   | What the docs should prove                                                                                                                    |
-| ---------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Repo             | Role                   | What the docs should prove                                                                                                                                   |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `agent-room`     | Coordination plane     | The TUI, daemon, MCP server, runtime adapters, optional room chat gateway, mobile pairing, room events, reports, and runtime audit form one control surface. |
-| `clanky-pi`      | Personal Pi agent      | Clanky is stateful, profile-scoped, memory-aware, communication-gateway-capable, voice/media-capable, and launchable as a normal AgentRoom worker. |
-| `clankvox`       | Native media plane     | Discord voice and Go Live need deterministic transport code: RTP, Opus, DAVE, H264/VP8, playback pacing, and framed media IPC.                |
-| `agent-room-ios` | Mobile operator client | A room can be checked and steered over a private tailnet without exposing the daemon publicly.                                                |
-| `docs`           | Shared docs shell      | Night Compiler keeps the docs sites consistent while each repo owns its content.                                                              |
-| `discord_mcp`    | Discord utility MCP    | Discord-only inspection and operations stay available without turning Discord into the room source of truth.                                  |
+| `clanky-pi`      | Personal Pi agent      | Clanky is stateful, profile-scoped, memory-aware, communication-gateway-capable, voice/media-capable, and launchable as a normal AgentRoom worker.           |
+| `clankvox`       | Native media plane     | Discord voice and Go Live need deterministic transport code: RTP, Opus, DAVE, H264/VP8, playback pacing, and framed media IPC.                               |
+| `agent-room-ios` | Mobile operator client | A room can be checked and steered over a private tailnet without exposing the daemon publicly.                                                               |
+| `docs`           | Shared docs shell      | Night Compiler keeps the docs sites consistent while each repo owns its content.                                                                             |
+| `discord_mcp`    | Discord utility MCP    | Discord-only inspection and operations stay available without turning Discord into the room source of truth.                                                 |
 
 ## Where To Go Next
 
@@ -205,7 +206,7 @@ jump to [ClankVox Overview](docs://clankvox-docs/overview).
   or a hybrid.
 - [Coordination Model](COORDINATION.md): what belongs in AgentRoom versus the
   durable work tracker.
-- [Runtime Providers](RUNTIMES.md): Herdr, tmux, fake runtime, adoption, and
+- [Runtime Providers](RUNTIMES.md): Herdr, Zellij, tmux, fake runtime, adoption, and
   audited commands.
 - [Security Model](SECURITY.md): token ownership, terminal audit, and local
   trust boundaries.
@@ -251,7 +252,7 @@ AgentRoom is the control layer in the agent-first workspace:
 
 - open the singleton TUI from anywhere and ask what is happening in plain
   language
-- launch agents into Herdr, tmux, or any future runtime provider
+- launch agents into Herdr, Zellij, tmux, or any future runtime provider
 - send and read through audited room commands instead of raw terminal input
 - let compatible agents inspect room context and coordinate through MCP
 - connect a phone over a private tailnet for on-the-go room checks
@@ -286,7 +287,7 @@ flowchart TB
   human["Human<br/>TUI, CLI, iOS, chat"]
   room["AgentRoom<br/>messages, reports, audit, runtime control"]
   agents["Agents<br/>Clanky, Codex, Claude Code, Pi, Gemini, custom"]
-  runtimes["Runtime providers<br/>Herdr, tmux, future hosted"]
+  runtimes["Runtime providers<br/>Herdr, Zellij, tmux, future hosted"]
   gateways["Room-owned chat gateways<br/>Discord first"]
   external["Agent-owned external tools<br/>Linear, GitHub, Figma, MCP, CLI"]
 
@@ -344,6 +345,7 @@ packages/
   config/          typed AgentRoom home config parser and writer
   storage-jsonl/   append-only event store for local rooms
   runtime-herdr/   Herdr runtime adapter
+  runtime-zellij/  Zellij runtime adapter
   runtime-tmux/    tmux runtime adapter
   runtime-fake/    contract-test runtime
   integrations/    room-owned chat gateway adapters
@@ -372,6 +374,8 @@ agent-room runtime doctor
 agent-room daemon start
 agent-room
 herdr --session agent-room
+# or:
+zellij attach agent-room
 ```
 
 Launch a real agent through the selected runtime:
@@ -450,8 +454,8 @@ bundle id or APNs host differs from the default development build.
 AgentRoom core owns local room behavior. Provider ports keep the rest
 replaceable:
 
-- `RuntimeProvider`: Herdr, tmux, fake today; Docker, SSH, ECS, Kubernetes, or
-  custom adapters later.
+- `RuntimeProvider`: Herdr, Zellij, tmux, fake today; Docker, SSH, ECS,
+  Kubernetes, or custom adapters later.
 - Work tracker config: provider-neutral selection plus room protocol. Agents
   use the selected tracker's MCP server, connector, CLI, or skill and link
   external refs back to room messages, reports, or tracker events.
@@ -527,8 +531,8 @@ High-signal pages:
 
 AgentRoom is a runnable local coordination plane. It includes the core room
 model, CLI, daemon HTTP API, TUI, MCP server, Expo mobile client, JSONL event
-storage, tmux/Herdr/fake runtime providers, audited runtime launch/read/send/
-stop, Herdr pane adoption, wait/events-follow, tracker refs/events,
+storage, Herdr/Zellij/tmux/fake runtime providers, audited runtime launch/read/send/
+stop, Herdr and Zellij pane adoption, wait/events-follow, tracker refs/events,
 user-visible reports/feed, chat gateway routing primitives with a Discord
 adapter today, and mobile tailnet pairing.
 
@@ -546,7 +550,7 @@ Source: `docs/TUI.md` - https://volpestyle.github.io/docs/agent-room/?doc=tui
 
 The AgentRoom TUI is the normal front door for humans. It is a terminal
 dashboard with an operator chat on the first screen. Start there, ask the room
-what is happening, and let the dashboard agent use the room tools for you.
+what is happening, or type `/` and use the arrow-key command menu.
 
 ```bash
 agent-room
@@ -582,20 +586,24 @@ summaries. You do not need to know the full CLI for day-to-day operation.
 
 ## Views
 
-Use the views when you want to inspect state directly:
+Use slash commands when you want to inspect state directly:
 
 | View       | Use it for                                                         |
 | ---------- | ------------------------------------------------------------------ |
-| Chat       | Ask the operator what is happening and request room actions.       |
-| Overview   | Check daemon health, runtime provider, room id, and recent status. |
-| Workspaces | See registered cwd/project contexts.                               |
-| Agents     | See launched or adopted agents and their runtime bindings.         |
-| Messages   | Read room channels, direct messages, and handoffs.                 |
-| Events     | Audit room activity, runtime reads/sends, and provider changes.    |
-| Logs       | Search dashboard-agent prompts, tool calls/results, and errors.    |
-| Help       | See hotkeys, slash commands, and environment knobs.                |
+| `/chat`       | Ask the operator what is happening and request room actions.       |
+| `/overview`   | Check daemon health, runtime provider, room id, and recent status. |
+| `/workspaces` | See registered cwd/project contexts.                               |
+| `/agents`     | See launched or adopted agents and their runtime bindings.         |
+| `/messages`   | Read room channels, direct messages, and handoffs.                 |
+| `/events`     | Audit room activity, runtime reads/sends, and provider changes.    |
+| `/settings`   | Edit runtime, tracker, MCP, chat tokens, and channels.             |
+| `/logs`       | Search dashboard-agent prompts, tool calls/results, and errors.    |
+| `/help`       | See hotkeys, slash commands, and environment knobs.                |
 
-`Ctrl+G` and `Ctrl+L` cycle views. `Esc` opens the view picker. `?` opens Help.
+Press `/` from any view to jump back to Chat command mode. Press `Tab` after
+`/`, or keep typing, then use `↑`/`↓` and `Enter` to select a command. `/views`
+and `Esc` open the arrow-key view picker. `Ctrl+G` and `Ctrl+L` still cycle
+views, and `Ctrl+C` quits.
 
 ## Setup
 
@@ -608,10 +616,13 @@ Useful setup commands:
 ```text
 /setup
 /setup runtime herdr
+/setup runtime zellij
 /setup tracker linear team_123
 /setup clanky agent .clanky-room lead
 /config
 /protocol
+/settings
+/views
 ```
 
 Setup commands write the same `.agentroom/config.yaml` model as the CLI.
@@ -634,7 +645,7 @@ flowchart LR
   tui["AgentRoom TUI<br/>chat + dashboard"]
   daemon["agentroomd"]
   room["Room events<br/>messages, reports, audit"]
-  runtime["Runtime provider<br/>Herdr, tmux, future"]
+  runtime["Runtime provider<br/>Herdr, Zellij, tmux, future"]
   agents["Agents<br/>Clanky, Codex, Claude Code, Pi, custom"]
 
   human --> tui
@@ -646,7 +657,7 @@ flowchart LR
 ```
 
 The TUI is a surface. The daemon and event store hold the room state. Runtime
-providers place processes in Herdr, tmux, or future execution backends. Agents
+providers place processes in Herdr, Zellij, tmux, or future execution backends. Agents
 coordinate through the room rather than through private terminal assumptions.
 
 ## When To Use The CLI Instead
@@ -693,7 +704,7 @@ Prerequisites:
 - Node.js 24 LTS or newer within the supported engine range
 - Corepack
 - pnpm 11
-- any runtime provider CLI you choose, such as `tmux` or `herdr`
+- any runtime provider CLI you choose, such as `herdr`, `zellij`, or `tmux`
 - any agent harness CLI you choose, such as Codex, Claude Code, Pi, Gemini CLI, or a custom command
 
 From the AgentRoom checkout:
@@ -716,7 +727,7 @@ lives in the nearest `.agentroom/config.yaml`, found by walking upward from the
 current directory. The editable room protocol lives beside it at
 `.agentroom/AGENTS.md`. `AGENTROOM_HOME` is an explicit override for singleton
 or operator deployments. The default visible runtime is `herdr --session
-agent-room`.
+agent-room`, with Zellij and tmux available as first-class alternatives.
 
 Start with the human surface:
 
@@ -730,7 +741,7 @@ but the TUI should be the first interface a human learns.
 
 - The room config is shared by every process launched inside that project tree.
 - A cwd is workspace context inside the room, not a separate room identity.
-- Herdr workspaces/tabs/panes are the visible layout under the same session.
+- Runtime sessions and panes are the visible layout under the same room.
 
 See `docs/TOPOLOGY.md` for the tradeoffs.
 
@@ -767,8 +778,9 @@ line above is only for a source checkout before the CLI is installed globally.
 
 Runtime choices:
 
-- `tmux`: local terminal multiplexer via `@agentroom/runtime-tmux`.
 - `herdr`: Herdr adapter via `@agentroom/runtime-herdr`.
+- `zellij`: Zellij adapter via `@agentroom/runtime-zellij`.
+- `tmux`: local terminal multiplexer via `@agentroom/runtime-tmux`.
 - `fake`: contract tests and smoke checks only; not a real agent runtime.
 
 Runtime-specific setup belongs in AgentRoom config and
@@ -1100,6 +1112,8 @@ durable state lives in the nearest `.agentroom/` directory unless
 
 ```bash
 herdr --session agent-room
+# or:
+zellij attach agent-room
 ```
 
 A working directory is workspace context. It should not create a separate room
@@ -1113,6 +1127,8 @@ Herdr session agent-room       visible local runtime surface
 Herdr workspace                cwd/project grouping
 Herdr tab                      workstream or subcontext grouping
 Herdr pane                     visible agent/process binding
+Zellij session agent-room      alternate visible runtime surface
+Zellij pane                    visible agent/process binding
 Headless agent                 room agent with no pane binding
 ```
 
@@ -1169,6 +1185,16 @@ tmux does not have Herdr's workspace concept. The intended mapping is:
 - AgentRoom workspace -> tmux window
 - workstream/subcontext -> window name or pane grouping
 - agent/process -> pane
+
+The durable AgentRoom workspace record remains the same either way.
+
+## Zellij Mapping
+
+Zellij does not have Herdr's workspace concept. The intended mapping is:
+
+- AgentRoom workspace -> pane cwd and optional tab naming
+- workstream/subcontext -> tab or pane title
+- agent/process -> pane titled `agentroom:<agentId>`
 
 The durable AgentRoom workspace record remains the same either way.
 
@@ -1366,6 +1392,51 @@ This avoids crowding new agents into stale panes from an older Herdr workspace. 
 The Herdr adapter implements `adoptAgent`. When the AgentRoom daemon is running with a Herdr-backed room, it opens a long-lived subscription to the configured Herdr session's socket and listens for pane creation, agent detection, and pane close events. Panes are auto-enrolled only after Herdr reports an agent identity, using `herdr:<session>:<pane>` as the agent id. Closed panes, missing bindings, and previously auto-adopted panes that no longer report an agent are marked `stopped`. Adoption does not execute a harness command; whatever shell or harness is already running in the pane stays running.
 
 For one-off manual enrollment when the daemon is not running, use `agent-room enroll --json` from inside the pane.
+
+## Zellij Adapter
+
+Zellij support lives behind `@agentroom/runtime-zellij`. The local default is
+the singleton Zellij session named `agent-room`:
+
+```bash
+agent-room runtime use zellij
+zellij attach agent-room
+agent-room runtime doctor
+```
+
+The room id and default Zellij session are both `agent-room`. The Zellij CLI
+command defaults to `zellij`. A launch cwd becomes the pane cwd, and AgentRoom
+sets the pane title to `agentroom:<agentId>` so later daemon reconciliation can
+recognize the pane without adopting unrelated shells.
+
+When using a local Zellij checkout or wrapper script, set the executable in
+config:
+
+```bash
+agent-room init --runtime zellij --runtime-cli /path/to/zellij
+```
+
+```yaml
+runtimes:
+  zellij:
+    type: zellij
+    session: agent-room
+    cli: /path/to/zellij
+```
+
+Zellij placement is pane-based today. AgentRoom creates the configured session
+in the background when needed, launches each agent with `zellij run --cwd ...
+--name agentroom:<agentId> -- ...`, and uses the returned pane id as the
+runtime binding. `read`, `send`, `send-keys`, `stop`, and `attach` go through
+the same audited RuntimeProvider path as other adapters.
+
+### Adopting Zellij panes
+
+The Zellij adapter implements `adoptAgent`. The daemon periodically lists panes
+in the configured Zellij session and auto-enrolls only panes that report an
+AgentRoom identity, either through an `agentroom:<agentId>` title or an
+`AGENTROOM_AGENT_ID=<id>` command environment. Ordinary Zellij shells are left
+alone. Missing panes are marked stopped for AgentRoom-bound agents.
 
 ## tmux Adapter
 
@@ -1625,6 +1696,7 @@ Common init examples:
 ```bash
 agent-room init --runtime herdr
 agent-room init --runtime herdr --runtime-cli herdr-dev
+agent-room init --runtime zellij --runtime-cli /path/to/zellij
 agent-room init --runtime herdr --clanky --work-tracker linear --tracker-team team_123
 ```
 
@@ -1656,12 +1728,12 @@ Useful options:
 
 APNs push pairing requires daemon environment variables:
 
-| Env var                    | Purpose                                      |
-| -------------------------- | -------------------------------------------- |
-| `AGENTROOM_APNS_KEY_PATH`  | Path to the APNs provider `.p8` key.         |
-| `AGENTROOM_APNS_KEY_ID`    | Apple key id for that provider key.          |
-| `AGENTROOM_APNS_TEAM_ID`   | Apple Developer Team id.                     |
-| `AGENTROOM_APNS_BUNDLE_ID` | Optional app bundle id override.             |
+| Env var                    | Purpose                                        |
+| -------------------------- | ---------------------------------------------- |
+| `AGENTROOM_APNS_KEY_PATH`  | Path to the APNs provider `.p8` key.           |
+| `AGENTROOM_APNS_KEY_ID`    | Apple key id for that provider key.            |
+| `AGENTROOM_APNS_TEAM_ID`   | Apple Developer Team id.                       |
+| `AGENTROOM_APNS_BUNDLE_ID` | Optional app bundle id override.               |
 | `AGENTROOM_APNS_ENV`       | Optional APNs host: `sandbox` or `production`. |
 
 ## Runtime Providers
@@ -1673,22 +1745,22 @@ APNs push pairing requires daemon environment variables:
 | `agent-room runtime doctor`        | Check the selected runtime provider.  |
 | `agent-room runtime fake-smoke`    | Run the fake provider contract smoke. |
 
-Supported runtime kinds today: `herdr`, `tmux`, and `fake`.
+Supported runtime kinds today: `herdr`, `zellij`, `tmux`, and `fake`.
 
 ## Agent Runtime Control
 
-| Command                                | Purpose                                                       |
-| -------------------------------------- | ------------------------------------------------------------- |
-| `agent-room launch <agentId>`          | Launch an opted-in agent through a runtime provider.          |
-| `agent-room delegate <agentId> <work>` | DM a tracker-linked work assignment and wake the agent if idle. |
-| `agent-room enroll`                    | Enroll the current pane or shell into the room.               |
-| `agent-room agents`                    | Show enrolled agents, roles, state, and heartbeat.            |
-| `agent-room wait-agent <agentId>`      | Wait until an agent reaches a state such as `done` or `idle`. |
-| `agent-room read <agentId>`            | Read recent output from a runtime-backed agent.               |
-| `agent-room search-runtime <query>`    | Search recent output across AgentRoom-bound runtime agents.   |
-| `agent-room send <agentId> <text>`     | Send input to a runtime-backed agent.                         |
+| Command                                | Purpose                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------ |
+| `agent-room launch <agentId>`          | Launch an opted-in agent through a runtime provider.                           |
+| `agent-room delegate <agentId> <work>` | DM a tracker-linked work assignment and wake the agent if idle.                |
+| `agent-room enroll`                    | Enroll the current pane or shell into the room.                                |
+| `agent-room agents`                    | Show enrolled agents, roles, state, and heartbeat.                             |
+| `agent-room wait-agent <agentId>`      | Wait until an agent reaches a state such as `done` or `idle`.                  |
+| `agent-room read <agentId>`            | Read recent output from a runtime-backed agent.                                |
+| `agent-room search-runtime <query>`    | Search recent output across AgentRoom-bound runtime agents.                    |
+| `agent-room send <agentId> <text>`     | Send input to a runtime-backed agent.                                          |
 | `agent-room activate <agentId>`        | Inject the activation prompt so an enrolled agent loads the `agentroom` skill. |
-| `agent-room stop <agentId>`            | Stop a runtime-backed agent.                                  |
+| `agent-room stop <agentId>`            | Stop a runtime-backed agent.                                                   |
 
 Launch requires an explicit harness and command:
 
@@ -1710,6 +1782,10 @@ Herdr placement options:
 | `--workspace <label>`              | Place the agent in a named Herdr workspace. |
 | `--panes-per-tab <number>`         | Cap pane-grid density.                      |
 | `--split largest\|focused`         | Choose the pane split strategy.             |
+
+Zellij and tmux launches are pane-based today. Use `--cwd`, `--harness`, and
+`--command` for placement and process selection; Herdr-only layout flags are
+rejected for non-Herdr providers.
 
 By default, `read`, `send`, and `stop` require an AgentRoom runtime binding so
 terminal IO stays audited. `--unaudited` is for manual recovery only.
@@ -1737,16 +1813,16 @@ work tracker and reports room progress through `status`, `report`, `block`, and
 
 ## Messages And Waits
 
-| Command                           | Purpose                                                  |
-| --------------------------------- | -------------------------------------------------------- |
-| `agent-room post <body>`          | Post a room channel message.                             |
-| `agent-room status --mode ...`    | Post a parseable status update with standard fields.     |
-| `agent-room dm <agentIds> <body>` | Send a direct message to one or more agents.             |
-| `agent-room messages`             | Show recent room messages.                               |
-| `agent-room wait`                 | Wait until a matching room event appears.                |
-| `agent-room events`               | Show recent local room events.                           |
-| `agent-room events --follow`      | Stream new events.                                       |
-| `agent-room feed`                 | Show the user-visible tracker/report feed.               |
+| Command                           | Purpose                                              |
+| --------------------------------- | ---------------------------------------------------- |
+| `agent-room post <body>`          | Post a room channel message.                         |
+| `agent-room status --mode ...`    | Post a parseable status update with standard fields. |
+| `agent-room dm <agentIds> <body>` | Send a direct message to one or more agents.         |
+| `agent-room messages`             | Show recent room messages.                           |
+| `agent-room wait`                 | Wait until a matching room event appears.            |
+| `agent-room events`               | Show recent local room events.                       |
+| `agent-room events --follow`      | Stream new events.                                   |
+| `agent-room feed`                 | Show the user-visible tracker/report feed.           |
 
 Examples:
 
@@ -1770,13 +1846,13 @@ AgentRoom has no built-in task store. Issues, ownership, workflow state, and
 durable comments live in the configured work tracker. Use AgentRoom for runtime
 coordination and user-visible execution summaries.
 
-| Command                             | Purpose                                                       |
-| ----------------------------------- | ------------------------------------------------------------- |
-| `agent-room block --reason <reason>` | Report that the current enrolled agent is blocked.            |
-| `agent-room done --summary <summary>` | Report that the current enrolled agent finished its work.     |
-| `agent-room report --summary <text>` | Add a narrative agent report to the user-visible feed.        |
-| `agent-room ask-human <question>`    | Create a human escalation question in the room.               |
-| `agent-room feed`                    | Read tracker webhook/importer events plus narrative reports.  |
+| Command                               | Purpose                                                      |
+| ------------------------------------- | ------------------------------------------------------------ |
+| `agent-room block --reason <reason>`  | Report that the current enrolled agent is blocked.           |
+| `agent-room done --summary <summary>` | Report that the current enrolled agent finished its work.    |
+| `agent-room report --summary <text>`  | Add a narrative agent report to the user-visible feed.       |
+| `agent-room ask-human <question>`     | Create a human escalation question in the room.              |
+| `agent-room feed`                     | Read tracker webhook/importer events plus narrative reports. |
 
 `block` and `done` update agent state for room coordination. They are not task
 tracker commands. If the configured tracker is unavailable when an issue update
@@ -1872,7 +1948,8 @@ EventStore Runtime   ChatGateway
    │          │        │
    ▼          ▼        ▼
  local     Herdr     Discord
- JSONL     tmux      future chat
+ JSONL     Zellij    future chat
+           tmux
            future
 ```
 
@@ -1929,6 +2006,7 @@ See `docs/ADR/0003-chat-gateway-port.md`.
 Adapters implement ports:
 
 - `runtime-herdr`
+- `runtime-zellij`
 - `runtime-tmux`
 - `runtime-fake`
 - `chat-discord` (`ChatGatewayProvider`, bot-token and user-token modes)
@@ -2052,7 +2130,7 @@ flowchart TB
   gateways["ChatGatewayProvider<br/>optional room-owned conversation routing"]
   external["Agent-owned tools<br/>trackers, code hosts, design systems, CLIs, MCP"]
   local[".agentroom/<br/>config.yaml<br/>AGENTS.md<br/>events.jsonl<br/>SQLite planned"]
-  runtimes["Herdr<br/>tmux<br/>fake<br/>future runtimes"]
+  runtimes["Herdr<br/>Zellij<br/>tmux<br/>fake<br/>future runtimes"]
   chatAdapters["Discord<br/>future chat gateways"]
 
   surfaces --> daemon
@@ -2078,7 +2156,7 @@ flowchart TB
   tracker events, runtime bindings, chat ingress/egress, and terminal
   input/output observations.
 - Runtime providers own process placement and terminal control. AgentRoom uses
-  provider capabilities instead of assuming Herdr, tmux, Docker, SSH, or a
+  provider capabilities instead of assuming Herdr, Zellij, tmux, Docker, SSH, or a
   hosted scheduler.
 - Durable external systems stay external. The selected work tracker remains
   canonical for issues and workflow; agents use their own MCP servers,
@@ -2118,21 +2196,21 @@ maintainers but noisy for the public product narrative.
 
 ## Built
 
-- Runtime provider port with fake, tmux, and Herdr adapters.
+- Runtime provider port with fake, tmux, Zellij, and Herdr adapters.
 - JSONL event store and in-memory test store.
 - Native channel/DM messages, wait/event streaming, human escalations, agent-state signals, tracker events, and user-visible reports/feed.
 - CLI for init, daemon lifecycle, mobile pairing, TUI launch, messages, waits, tracker health, reports/feed, runtime selection, launch/enroll/read/send/search/stop, and audit events.
 - Hono daemon with health, dashboard config, protocol/config reads, events/feed, messages, reports, tracker event import, runtime providers/agents/input/output/search, chat gateway route inspection, and bearer-token protection for `/v1/*` when configured.
 - Interactive TUI dashboard with chat, overview, workspaces, agents, messages, events, logs, settings, slash-command templates, and optional operator bootstrap.
 - Expo/React Native mobile client for health, messages, events, runtime providers/agents, room posting, and runtime input.
-- MCP stdio server for room context, messages, events, feed, posts, DMs, reports, directed-message reads, iOS diagnostics, and waits.
+- MCP stdio server for room context, messages, events, feed, posts, DMs, reports, directed-message reads, runtime provider/agent inspection, runtime-backed launch/read/send/stop, iOS diagnostics, and waits.
 - Chat gateway port, Discord adapter, inbound router, outbound dispatcher, webhook-mode attribution, and daemon config loading.
-- Herdr pane adoption for daemon-observed panes and one-off `agent-room enroll`.
+- Herdr pane adoption, Zellij AgentRoom-marked pane adoption, and one-off `agent-room enroll`.
 
 ## Next
 
 - Add SQLite as the durable local event store while preserving event replay.
-- Harden tmux/Herdr provider contract tests against real runtime sessions.
+- Harden tmux/Zellij/Herdr provider contract tests against real runtime sessions.
 - Add operator CLI and TUI support for editing AgentRoom home config through `@agentroom/config`, starting with chat gateway route inspection and mutation.
 - Improve configured tracker protocol ergonomics, including clearer skipped-update reporting.
 - Add richer approval enforcement beyond local policy files.
