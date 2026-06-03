@@ -5,6 +5,6 @@
 	"type": "module",
 	"packageManager": "pnpm@11.4.0",
 	"scripts": {
-		"check": "pnpm --filter @volpestyle/night-compiler check"
+		"check": "pnpm --filter @volpestyle/night-compiler check && node scripts/test-public-docs-policy.mjs"
 	}
 }

@@ -16,10 +16,11 @@ The package owns the reusable docs UI:
 
 Each consumer repo owns only:
 
-- a docs app with `src/docs-manifest.ts`, `src/content.ts`, and `src/main.tsx`
-- a docs-app `scripts/generate-llms.ts`
+- a docs app at its configured `docs-app-path` with `src/docs-manifest.ts`,
+  `src/content.ts`, and `src/main.tsx`
 - repo-specific branding assets
-- a thin `.github/workflows/docs-pages.yml` caller
+- a thin `.github/workflows/docs-pages.yml` caller that sets the base path,
+  site slug, and any non-default app/artifact paths
 
 Use `defineDocsConfig` in the consumer app to bind page metadata to raw Markdown imports, then render `<DocsApp config={docsConfig} />`.
 
@@ -38,6 +39,8 @@ jobs:
     with:
       docs-base-path: /docs/agent-room/
       site-slug: agent-room
+      docs-app-path: apps/docs
+      artifact-path: apps/docs/dist
     secrets:
       docs-publish-key: ${{ secrets.DOCS_PUBLISH_KEY }}
 ```
