@@ -857,32 +857,28 @@ Source: `docs/development.md` - https://volpestyle.github.io/docs/clankvox/?doc=
 
 # clankvox Development
 
-This document is the practical guide for editing and validating the crate.
+This document is the practical guide for editing and validating the standalone
+Rust media-plane package at `/Users/jamesvolpe/dev/agents/clankvox`.
 
 ## Build And Test
 
-From `src/voice/clankvox`:
+From this repo:
 
 ```sh
 cargo test
-```
-
-Release build:
-
-```sh
-OPUS_STATIC=1 OPUS_NO_PKG=1 cargo build --release
-```
-
-Format:
-
-```sh
 cargo fmt
+OPUS_STATIC=1 OPUS_NO_PKG=1 cargo build --release
+pnpm docs:build
 ```
 
-From the Clanky repo root, the TypeScript wrapper uses:
+From the sibling Clanky repo, use the wrapper scripts that build this crate
+through Clanky's expected flags and lockfile:
 
 ```sh
-bun run build:voice
+cd ../clanky-pi
+pnpm voice:native:check
+pnpm voice:native:test
+pnpm voice:build
 ```
 
 ## Logging
@@ -900,10 +896,10 @@ Useful knobs:
 - `RUST_LOG=debug` when you need transport detail
 - `AUDIO_DEBUG=1` when you need more audio-path IPC logging
 
-The subprocess intentionally keeps the Clanky IPC channel separate from logs.
-Stdin accepts line-delimited JSON commands. Stdout emits framed IPC messages
-with a tag byte and payload length so audio/video payloads do not collide with
-logs. Stderr is for operator logs.
+The subprocess keeps the Clanky IPC channel separate from logs. Stdin accepts
+line-delimited JSON commands. Stdout emits framed IPC messages with a tag byte
+and payload length so audio/video payloads do not collide with logs. Stderr is
+for operator logs.
 
 ## High-Value Edit Locations
 
@@ -919,6 +915,10 @@ If you are changing…
   - [../src/playback_supervisor.rs](../src/playback_supervisor.rs)
   - [../src/audio_pipeline.rs](../src/audio_pipeline.rs)
   - [../src/music.rs](../src/music.rs)
+- media subprocess pipelines:
+  - [../src/process_unix.rs](../src/process_unix.rs)
+  - [../src/music.rs](../src/music.rs)
+  - [../src/stream_publish.rs](../src/stream_publish.rs)
 - native watch transport:
   - [../src/voice_conn.rs](../src/voice_conn.rs)
   - [../src/video.rs](../src/video.rs)
@@ -930,54 +930,47 @@ If you are changing…
 - Clanky IPC contracts:
   - [../src/ipc.rs](../src/ipc.rs)
   - [../src/ipc_protocol.rs](../src/ipc_protocol.rs)
-  - [../../clankvoxClient.ts](../../clankvoxClient.ts)
+  - [../../clanky-pi/agents/clanky/src/voice/clankvoxIpcClient.ts](../../clanky-pi/agents/clanky/src/voice/clankvoxIpcClient.ts)
 
 ## Coordination With Clanky
 
-`clankvox` almost never changes alone.
+`clankvox` almost never changes alone. When you add a new transport event or
+command, update both sides in the same change:
 
-Most media-plane changes also require checking:
-
-- [../../clankvoxClient.ts](../../clankvoxClient.ts)
-- [../../sessionLifecycle.ts](../../sessionLifecycle.ts)
-- [../../voiceSessionManager.ts](../../voiceSessionManager.ts)
-- [../../../selfbot/streamDiscovery.ts](../../../selfbot/streamDiscovery.ts) for Go Live control-plane changes
-
-When you add a new transport event or command, update both sides in the same change.
+- Rust IPC protocol: [../src/ipc_protocol.rs](../src/ipc_protocol.rs)
+- TypeScript IPC client: [../../clanky-pi/agents/clanky/src/voice/clankvoxIpcClient.ts](../../clanky-pi/agents/clanky/src/voice/clankvoxIpcClient.ts)
+- Voice orchestration: [../../clanky-pi/agents/clanky/src/agentDiscordVoice.ts](../../clanky-pi/agents/clanky/src/agentDiscordVoice.ts)
+- Stream discovery/control plane: [../../clanky-pi/agents/clanky/src/voice/discordStreamDiscovery.ts](../../clanky-pi/agents/clanky/src/voice/discordStreamDiscovery.ts)
 
 ## Manual Validation Checklist
 
-### Audio changes
+### Audio Changes
 
-1. run `cargo test`
-2. run repo tests that cover `clankvoxClient` / voice lifecycle
-3. validate:
+1. Run `cargo test`.
+2. Run `pnpm voice:native:test` from `../clanky-pi`.
+3. Validate:
    - join still works
    - inbound capture still arrives
    - TTS still drains
    - music still starts, pauses, and resumes cleanly
 
-### Go Live changes
+### Go Live Changes
 
-1. run `cargo test`
-2. run repo tests for:
-   - `src/voice/clankvoxClient.test.ts`
-   - stream discovery / screen watch / publish lifecycle tests
-3. validate which role changed:
+1. Run `cargo test`.
+2. Run the Clanky voice smoke coverage that exercises screen watch and stream
+   publish lifecycle.
+3. Validate which role changed:
    - `stream_watch`
    - `stream_publish`
-4. confirm the right transport-state events are still emitted
+4. Confirm the right transport-state events are still emitted.
 
 ## Known Sharp Edges
 
-- DAVE transition handling is protocol-sensitive and easy to break with “small” changes
-- stream-server behavior is role-specific; a fix for `voice` is not automatically correct for `stream_watch` or `stream_publish`
-- sender and receiver video paths share protocol code, but not identical lifecycle expectations
-- Clanky may look logically correct while `clankvox` still has buffered playback; trust subprocess telemetry for floor state
-
-## Related Context
-
-For historical findings and older debugging notes, keep these nearby:
-
-- [../../../../docs/notes/rust-submodule-dev.md](../../../../docs/notes/rust-submodule-dev.md)
-- [../../../../docs/notes/NATIVE_SCREENSHARE_NOTES.md](../../../../docs/notes/NATIVE_SCREENSHARE_NOTES.md)
+- DAVE transition handling is protocol-sensitive and easy to break with small
+  changes.
+- Stream-server behavior is role-specific; a fix for `voice` is not
+  automatically correct for `stream_watch` or `stream_publish`.
+- Sender and receiver video paths share protocol code, but not identical
+  lifecycle expectations.
+- Clanky may look logically correct while `clankvox` still has buffered
+  playback; trust subprocess telemetry for floor state.
