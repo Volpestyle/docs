@@ -445,6 +445,22 @@ agent-room mobile-connect --push
 Use `AGENTROOM_APNS_BUNDLE_ID` and `AGENTROOM_APNS_ENV=production` when the app
 bundle id or APNs host differs from the default development build.
 
+For physical-device APNs verification, check readiness first and then run the
+room-update smoke:
+
+```bash
+agent-room ios push-status --json
+agent-room ios push-smoke --timeout 60 --json
+```
+
+`push-status` should report `readyForSmoke: true`, `keyFileReadable: true`,
+no `missingEnv`, no `problems`, at least one registered device, and at least one
+iOS client with a reported push token before the smoke is considered
+deterministic. `push-smoke` performs the same preflight and exits before sending
+APNs when readiness is incomplete. The daemon's raw
+`POST /v1/mobile/room-update-push` endpoint enforces this same readiness check
+for direct API callers.
+
 <!-- Capture backlog:
 - docs/assets/gifs/mobile-room-check.gif: daemon pairing, phone connection, and a quick room status check.
 -->
@@ -1715,6 +1731,11 @@ agent-room init --runtime herdr --clanky --work-tracker linear --tracker-team te
 | `agent-room mobile-connect`         | Print AgentRoom iOS/mobile connection settings.              |
 | `agent-room mobile-connect --copy`  | Copy the `agentroom://connect?...` pairing link on macOS.    |
 | `agent-room mobile-connect --push`  | Send the connection settings to registered iOS devices.      |
+| `agent-room ios logs`               | Stream structured telemetry reported by iOS clients.         |
+| `agent-room ios state`              | Show the latest reported state for each iOS client.          |
+| `agent-room ios push-status`        | Show APNs readiness, devices, and iOS client push state.     |
+| `agent-room ios cmd <client> <kind>` | Queue an iOS client command for its next check-in.           |
+| `agent-room ios push-smoke`         | Send a room-update APNs smoke push and wait for receipt.     |
 
 Useful options:
 
@@ -1735,6 +1756,16 @@ APNs push pairing requires daemon environment variables:
 | `AGENTROOM_APNS_TEAM_ID`   | Apple Developer Team id.                       |
 | `AGENTROOM_APNS_BUNDLE_ID` | Optional app bundle id override.               |
 | `AGENTROOM_APNS_ENV`       | Optional APNs host: `sandbox` or `production`. |
+
+Use `agent-room ios push-status --json` to confirm `readyForSmoke: true`,
+`keyFileReadable: true`, no `missingEnv`, no readiness `problems`, registered
+devices, and reporting iOS clients before the final delivery test. Then run
+`agent-room ios push-smoke --daemon <url> --api-token <token> --json` on a
+paired physical device to prove APNs delivery end to end. The smoke command
+re-runs the same readiness preflight, exits before sending APNs if the daemon or
+iOS client is not ready, triggers a daemon room-update push, then waits for iOS
+telemetry confirming receipt. Direct API calls to
+`POST /v1/mobile/room-update-push` are guarded by the same readiness contract.
 
 ## Runtime Providers
 
