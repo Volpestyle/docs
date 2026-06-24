@@ -1,0 +1,136 @@
+# Clanky iOS - Full Docs
+
+> Clanky iOS is the native SwiftUI client for attaching to the Eve relay, inspecting herdr state, and steering Clanky work from a phone without inventing a second API.
+
+Generated from the live docs site. Each section below is one page; see the heading and source path for context.
+
+---
+
+# Overview
+
+Source: `README.md` - https://volpestyle.github.io/docs/clanky-ios/?doc=overview
+
+# Clanky iOS
+
+Native SwiftUI window for checking and steering Clanky from an iPhone. The app
+talks to the Eve relay that Clanky starts locally, mirrors the live herdr
+workspace/tab/pane hierarchy, and sends operator input back through the same
+relay contract used by the desktop tools.
+
+## What You Can Do
+
+- connect to an Eve relay over local network or Tailscale
+- store the relay URL in app preferences and the relay bearer token in Keychain
+- generate and store an ed25519 SSH lifecycle key in Keychain
+- run `scripts/clanky-up.ts` over SSH in `up`, `status`, and `down` modes
+- inspect herdr workspaces, tabs, panes, agents, and recent terminal output
+- send text and special keys to a pane through `run` and `keys` relay ops
+- launch and close herdr panes through the Clanky relay
+- start or continue a chat-with-Clanky Eve session
+
+## Contract Boundary
+
+This repository is the SwiftUI client only. The canonical API is the current
+Clanky implementation in `../clanky`, especially:
+
+- `SPEC.md` for the iOS window behavior
+- `scripts/clanky-up.ts` for lifecycle bootstrap output
+- `agent/channels/relay.ts` for relay operations and payloads
+- `agent/lib/frontdoor-auth.ts` for bearer-token auth
+- Eve session routes for chat-with-Clanky conversation state
+
+When the app needs new behavior, update or document the Clanky contract first,
+then wire the iOS integration against that contract.
+
+## Mental Model
+
+```mermaid
+flowchart LR
+  phone["Clanky iOS"]
+  network["LAN / Tailscale"]
+  sshd["sshd"]
+  lifecycle["scripts/clanky-up.ts"]
+  eve["Eve front door"]
+  relay["/relay/ws"]
+  herdr["herdr workspace"]
+  session["/eve/v1/session"]
+
+  phone --> network
+  network --> sshd
+  network --> eve
+  sshd --> lifecycle
+  lifecycle --> herdr
+  lifecycle --> eve
+  eve --> relay
+  eve --> session
+  relay --> herdr
+```
+
+HTTP URLs are accepted for local/private LAN and Tailscale modes. Custom public
+endpoints should use HTTPS.
+
+## Connect
+
+On first launch, copy the app's SSH public key from the connection screen and
+add it to the Mac user's `~/.ssh/authorized_keys`. Then enter the Mac SSH host,
+user, port, Clanky repo path, relay URL, and relay token.
+
+The app runs this lifecycle command over SSH before attaching to the relay:
+
+```bash
+cd <repoPath> && CLANKY_RELAY_TOKEN=<token> node scripts/clanky-up.ts --json
+```
+
+The `status` and `down` lifecycle modes are available from the connected room
+actions sheet.
+
+The app also accepts deep links of the form:
+
+```text
+clanky://connect?relayUrl=http://127.0.0.1:2000&token=...
+```
+
+For local simulator development, leaving SSH host empty still lets the app
+attach to an already-running relay.
+
+## Run
+
+```bash
+brew install xcodegen      # if not already installed
+xcodegen generate
+open ClankyIOS.xcodeproj
+```
+
+Command line:
+
+```bash
+xcodebuild -project ClankyIOS.xcodeproj \
+  -scheme ClankyIOS \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  build
+```
+
+## Documentation
+
+The hosted docs UI renders this README as the source of truth.
+
+```bash
+pnpm docs:dev
+pnpm docs:build
+```
+
+## Structure
+
+```text
+ClankyIOS/
+  ClankyIOSApp.swift
+  RootView.swift
+  Tokens/
+  Models/
+  Components/
+  Screens/
+  Services/
+```
+
+The seeded `AppStore.demo()` workspace uses Clanky/herdr sample data so the
+window hierarchy can be inspected before connecting to a live relay.
