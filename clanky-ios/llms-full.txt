@@ -23,7 +23,7 @@ relay contract used by the desktop tools.
 - store the relay URL in app preferences and the relay bearer token in Keychain
 - generate and store an ed25519 SSH lifecycle key in Keychain
 - run `scripts/clanky-up.ts` over SSH in `up`, `status`, and `down` modes
-- inspect herdr workspaces, tabs, panes, agents, and recent terminal output
+- inspect herdr workspaces, tabs, panes, agents, and full retained terminal history
 - send text and special keys to a pane through `run` and `keys` relay ops
 - launch and close herdr panes through the Clanky relay
 - start or continue a chat-with-Clanky Eve session
@@ -33,9 +33,25 @@ relay contract used by the desktop tools.
 Clanky iOS uses native SwiftUI app chrome around terminal content. Lists,
 forms, toolbars, sheets, multiwindow, Dynamic Type, and system appearance follow
 iPhone and iPad conventions; the mirrored terminal itself remains black and
-monospaced so ANSI output stays faithful. iPad layouts should use split views,
-toolbar commands, wider pane tiles, and readable-width content instead of
-stretching the iPhone bottom-bar flow.
+monospaced so ANSI output stays faithful. The bundled mono face is JetBrains
+Mono, matching the local Ghostty `font-family` setting. iPad layouts should use
+split views, toolbar commands, wider pane tiles, and readable-width content
+instead of stretching the iPhone bottom-bar flow.
+
+Modal sheets use Liquid Glass presentation chrome on iOS 26+, with opaque
+true-black fallbacks when Reduce Transparency is enabled. Screen-level content
+surfaces remain flat so terminal output and dense workspace lists stay legible.
+
+Pane history asks the relay for Herdr's full retained scrollback when that
+Herdr build supports it. Current vanilla Herdr builds that reject `source:
+"full"` fall back to capped `recent_unwrapped` output instead of surfacing a raw
+schema error. Normal terminal histories use the Ghostty VT renderer for ANSI
+color fidelity, with the local retained grid capped at 32,000 rows for very
+large buffers. The terminal scroll range is virtualized: UIKit owns the full
+scrollable height while the drawn terminal surface stays viewport-sized and
+paints only visible rows. Terminal panes support pinch-to-zoom text sizing that
+persists as the default across Agent tabs, with matching toolbar controls and a
+transient percentage HUD while zooming.
 
 ## Contract Boundary
 
