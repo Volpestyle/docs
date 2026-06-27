@@ -28,6 +28,15 @@ relay contract used by the desktop tools.
 - launch and close herdr panes through the Clanky relay
 - start or continue a chat-with-Clanky Eve session
 
+## Native UI Direction
+
+Clanky iOS uses native SwiftUI app chrome around terminal content. Lists,
+forms, toolbars, sheets, multiwindow, Dynamic Type, and system appearance follow
+iPhone and iPad conventions; the mirrored terminal itself remains black and
+monospaced so ANSI output stays faithful. iPad layouts should use split views,
+toolbar commands, wider pane tiles, and readable-width content instead of
+stretching the iPhone bottom-bar flow.
+
 ## Contract Boundary
 
 This repository is the SwiftUI client only. The canonical API is the current
