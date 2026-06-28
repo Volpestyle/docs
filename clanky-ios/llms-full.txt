@@ -138,6 +138,18 @@ xcodebuild -project ClankyIOS.xcodeproj \
   build
 ```
 
+Simulator terminal smoke test:
+
+```bash
+# Seeded terminal route, useful without a relay.
+scripts/ios-simulator-terminal-smoke.sh
+
+# Live relay route: connects to ../clanky, opens the first Herdr agent pane,
+# captures a screenshot/log, and fails on known SwiftUI terminal freeze faults.
+MODE=live DEVICE_NAME="iPad Pro 13-inch (M5)" scripts/ios-simulator-terminal-smoke.sh
+MODE=live DEVICE_NAME="iPhone 17 Pro" scripts/ios-simulator-terminal-smoke.sh
+```
+
 ## Documentation
 
 The hosted docs UI renders this README as the source of truth.
