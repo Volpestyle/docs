@@ -1,1 +1,0 @@
-import{x as e}from"./mermaid-parser.core-BX-RFo3G.js";export{e as createArchitectureServices};
