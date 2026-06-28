@@ -13,7 +13,7 @@ Source: `README.md` - https://volpestyle.github.io/docs/clanky-ios/?doc=overview
 # Clanky iOS
 
 Native SwiftUI window for checking and steering Clanky from an iPhone. The app
-talks to the Eve relay that Clanky starts locally, mirrors the live herdr
+talks to the Eve relay that Clanky's command face starts locally, mirrors the live herdr
 workspace/tab/pane hierarchy, and sends operator input back through the same
 relay contract used by the desktop tools.
 
@@ -28,6 +28,7 @@ relay contract used by the desktop tools.
 - send text and special keys to a pane through `run` and `keys` relay ops
 - launch and close herdr panes through the Clanky relay
 - start or continue a chat-with-Clanky Eve session
+- run command-face slash commands through native iOS menus where the command makes sense on mobile
 
 ## Native UI Direction
 
@@ -78,6 +79,7 @@ flowchart LR
   network["LAN / Tailscale"]
   sshd["sshd"]
   lifecycle["scripts/clanky-up.ts"]
+  face["Clanky command face"]
   eve["Eve front door"]
   relay["/relay/ws"]
   herdr["herdr workspace"]
@@ -88,7 +90,8 @@ flowchart LR
   network --> eve
   sshd --> lifecycle
   lifecycle --> herdr
-  lifecycle --> eve
+  lifecycle --> face
+  face --> eve
   eve --> relay
   eve --> session
   relay --> herdr
@@ -103,7 +106,9 @@ On first launch, copy the app's SSH public key from the connection screen and
 add it to the Mac user's `~/.ssh/authorized_keys`. Then enter the Mac SSH host,
 user, port, Clanky repo path, relay URL, and relay token.
 
-The app runs this lifecycle command over SSH before attaching to the relay:
+The app runs this lifecycle command over SSH before attaching to the relay. It
+starts the command-capable Clanky face, which owns the headless Eve server and
+mirrors slash-command menu events into the native iOS UI:
 
 ```bash
 cd <repoPath> && CLANKY_RELAY_TOKEN=<token> node scripts/clanky-up.ts --json
