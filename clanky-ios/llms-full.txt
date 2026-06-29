@@ -138,10 +138,19 @@ open ClankyIOS.xcodeproj
 Command line:
 
 ```bash
+pnpm build
+
+# Equivalent raw Xcode invocation:
 xcodebuild -project ClankyIOS.xcodeproj \
   -scheme ClankyIOS \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   build
+```
+
+Quality gate:
+
+```bash
+pnpm check
 ```
 
 Simulator terminal smoke test:
