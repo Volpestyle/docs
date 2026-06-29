@@ -154,6 +154,14 @@ scripts/ios-simulator-terminal-smoke.sh
 # captures a screenshot/log, and fails on known SwiftUI terminal freeze faults.
 MODE=live DEVICE_NAME="iPad Pro 13-inch (M5)" scripts/ios-simulator-terminal-smoke.sh
 MODE=live DEVICE_NAME="iPhone 17 Pro" scripts/ios-simulator-terminal-smoke.sh
+
+# Release-build terminal perf smoke; validates required TerminalLatency metrics.
+MODE=perf DEVICE_NAME="iPad Pro 13-inch (M5)" scripts/ios-simulator-terminal-smoke.sh
+
+# Optional xctrace artifact; the script has a watchdog because simulator
+# Instruments recording can hang or reject templates on some Xcode runtimes.
+MODE=perf RECORD_TRACE=1 TRACE_REQUIRED=0 TRACE_TEMPLATE="Time Profiler" \
+  scripts/ios-simulator-terminal-smoke.sh
 ```
 
 ## Documentation
