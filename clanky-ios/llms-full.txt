@@ -36,9 +36,32 @@ Clanky iOS uses native SwiftUI app chrome around terminal content. Lists,
 forms, toolbars, sheets, multiwindow, Dynamic Type, and system appearance follow
 iPhone and iPad conventions; the terminal surface itself remains black and
 monospaced so ANSI output stays faithful. The bundled mono face is JetBrains
-Mono, matching the local Ghostty `font-family` setting. iPad layouts should use
-split views, toolbar commands, wider pane tiles, and readable-width content
-instead of stretching the iPhone bottom-bar flow.
+Mono, matching the local Ghostty `font-family` setting.
+
+Compact-width connected mode uses a Linear-style bottom icon shell. The bottom
+pill routes between Terminal, Canvas, and Settings, a chevron expands a
+larger route/action menu, and the bottom-right agent button presents a
+`clanky` tray. Native Chat is not a peer compact tab; it lives in that agent
+tray as switchable chat tabs that can be scoped to the top-level lead or a
+workspace, so the compact route model stays focused on terminal, canvas, and
+settings. Back lives top-left on pushed routes, with a leading-edge
+swipe-right as an equivalent gesture; top-level destinations switch by tapping
+the bottom bar (top-level page-swipe is removed so it cannot fight the back
+swipe).
+
+iPad layouts keep the regular-width top/sidebar connected chrome, toolbar
+commands, wider workspace surfaces, and readable-width content instead of
+stretching the iPhone bottom-bar flow. The **Terminal** route's root is the
+workspace chooser; opening a workspace embeds the live Herdr tab/pane terminal
+for direct input. **Canvas** is a primary route — a pannable, zoomable agent
+graph (lead→worker delegation edges and workspace/tab containment) that graphs
+every workspace's agents and narrows to one workspace via a scope picker. Pane
+routes own the bottom edge on compact width, so the global bottom shell is
+suppressed only after opening a specific pane route; workspace detail keeps the
+primary shell available.
+
+See `docs/linear-mobile-shell.md` for the route and presentation decision, and
+`docs/agent-graph-canvas.md` for the agent graph architecture.
 
 Modal sheets use Liquid Glass presentation chrome on iOS 26+, with opaque
 true-black fallbacks when Reduce Transparency is enabled. Screen-level content
