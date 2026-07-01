@@ -141,9 +141,15 @@ For the product layer above ClankVox, jump to
 
 ```bash
 cargo test
-OPUS_STATIC=1 OPUS_NO_PKG=1 cargo build --release
+cargo build --release
 pnpm docs:dev
 ```
+
+Plain `cargo` commands work: [.cargo/config.toml](./.cargo/config.toml) pins
+the build environment (`OPUS_STATIC=1`, `OPUS_NO_PKG=1`, and
+`CMAKE_POLICY_VERSION_MINIMUM=3.5` — `audiopus_sys` builds bundled libopus
+through cmake, and cmake >= 4 refuses its vendored `cmake_minimum_required`
+without that floor).
 
 From Clanky, the Node wrapper normally uses:
 
@@ -254,8 +260,8 @@ Clanky's TypeScript runtime owns:
 - Discord selfbot gateway session and stream discovery dispatch handling
 - session orchestration and product logic
 - tools, prompts, settings, and commentary decisions
-- decoding native watch frames into JPEG for the higher-level screen-watch
-  pipeline
+- decoding VP8 watch frames into JPEG for the higher-level screen-watch
+  pipeline (the VP8 fallback path only)
 
 `clankvox` owns:
 
@@ -264,6 +270,9 @@ Clanky's TypeScript runtime owns:
 - UDP/RTP send and receive
 - codec advertisement and media framing
 - DAVE lifecycle and media encryption/decryption
+- decoding H264 watch frames to JPEG in-process
+  ([../src/video_decoder.rs](../src/video_decoder.rs) on a dedicated decode
+  thread), emitted over IPC as `decoded_video_frame`
 - capture events and media telemetry
 - TTS/music playback pacing
 - outbound native Go Live video packetization in the Discord transport
@@ -284,6 +293,34 @@ The loop reacts to five sources:
 - a 20ms tick used for audio send cadence and publish-frame draining
 
 That shape keeps transport logic serialized through `AppState` even though lower-level tasks are running concurrently behind channels.
+
+### Event-Loop Protection
+
+The 20ms tick is the audio cadence, so nothing heavy or blocking runs on the
+event loop:
+
+- H264 decode + JPEG encode for watch frames runs on the dedicated
+  [../src/video_decode_worker.rs](../src/video_decode_worker.rs) thread behind
+  a bounded frame lane (drop-oldest on overflow); decoder-reset PLI requests
+  come back over a small bounded lane drained on the capture tick.
+- Browser-session publish frames are written to ffmpeg stdin by a dedicated
+  writer thread behind a bounded lane (drop-oldest); the event loop never
+  performs the write, which can block indefinitely while the pipeline is
+  paused (`SIGSTOP`).
+- Subprocess teardown joins pipeline threads on detached threads, never
+  inline.
+- The main loop keeps `MissedTickBehavior::Skip` for the send tick but
+  measures inter-tick gaps and logs rate-limited
+  `clankvox_audio_tick_slippage` warnings when the cadence slips.
+
+### Fail-Closed E2EE
+
+With a ready DAVE session, an outbound frame that fails encryption is
+dropped — never sent plaintext. Consecutive encrypt failures are counted per
+path (voice audio, stream-publish video) and a structured
+`voice_runtime_error` IPC error is raised when a streak crosses the alert
+threshold. Plaintext is only sent while DAVE is absent or still handshaking,
+where it is the protocol-correct output.
 
 ## Core State
 
@@ -372,7 +409,9 @@ Owns:
 - music lifecycle events
 - queue draining on the 20ms tick
 - buffer depth and TTS playback telemetry
-- dispatch of one pending stream-publish frame per tick
+- dispatch of up to four pending stream-publish frames per tick (ffmpeg can
+  deliver several access units in one stdout chunk; draining more than one
+  per tick keeps RTP timestamps fresh without monopolising the loop)
 
 ### Stream Publish Runtime
 
@@ -393,28 +432,103 @@ Inbound commands are grouped into four conceptual families:
 
 - connection: join, voice server/state updates, stream-watch connect/disconnect, stream-publish connect/disconnect, destroy
 - capture: subscribe/unsubscribe user audio and user video
-- playback: TTS audio, stop playback, music play/pause/resume/stop/gain
-- stream publish runtime: play, pause, resume, stop
+- playback: TTS audio (`audio`), `stop_playback`, `stop_tts_playback`, music play/pause/resume/stop/gain
+- stream publish runtime: `stream_publish_play`, `stream_publish_play_visualizer`, `stream_publish_browser_start`, `stream_publish_browser_frame`, pause, resume, stop
+
+Stdin is read with a hard per-line cap (8MB): an oversized line is discarded
+up to its newline and reported as an `input_too_large` error; invalid UTF-8
+and malformed JSON lines are skipped with an `invalid_json` error. No single
+bad line can kill the reader or force a full shutdown.
 
 Outbound events are also grouped:
 
-- adapter / connection state
-- transport state per role
-- speaking and user audio capture
-- user video state, frames, and end events
-- playback and music lifecycle
-- buffer depth and TTS playback telemetry
-- structured IPC errors
+- process / adapter / connection state: `process_ready`, `ready`,
+  `adapter_send`, `connection_state`
+- transport state per role: `transport_state`
+- speaking and user audio capture: `speaking_start`/`speaking_end`,
+  `user_audio` (binary framing), `user_audio_end`, `client_disconnect`
+- user video: `user_video_state`, raw VP8 frames as `user_video_frame`,
+  in-process-decoded H264 JPEG frames as `decoded_video_frame`,
+  `user_video_end`
+- playback and music lifecycle: `player_state`, `playback_armed`,
+  `tts_playback_state`, `music_idle`, `music_error`, `music_gain_reached`
+- telemetry: `buffer_depth`, `tts_buffer_overflow`
+- structured IPC errors (`error`) and forwarded log records (`log`)
+
+### Writer Lanes
+
+The stdout writer thread drains four bounded lanes in strict priority order —
+control (4096), audio (512), video (64), then log (4096) — so log bursts can
+never preempt realtime audio/video delivery. Audio and video are lossy
+(newest dropped and counted on overflow), the log lane drops its oldest entry
+on overflow, and the control lane only drops (with an error log) once 4096
+control messages are stuck behind a stalled parent. A stalled parent
+therefore caps subprocess memory at the lane depths instead of growing
+unbounded.
 
 ## Module Map
 
-- [../src/voice_conn.rs](../src/voice_conn.rs): Discord transport and protocol heavy lifting
-- [../src/dave.rs](../src/dave.rs): DAVE session management and codec-aware encrypt/decrypt helpers
-- [../src/audio_pipeline.rs](../src/audio_pipeline.rs): PCM buffering and playback helpers
+Core loop and state:
+
+- [../src/main.rs](../src/main.rs): entrypoint, event loop, send-tick slippage monitor
+- [../src/app_state.rs](../src/app_state.rs): shared state, transport slots, encrypt-failure counters, decode scratch buffers
+
+Discord transport (`voice_conn` module tree):
+
+- [../src/voice_conn.rs](../src/voice_conn.rs): module root — connection handle, connect/shutdown lifecycle, events, transport roles
+- [../src/voice_conn/protocol.rs](../src/voice_conn/protocol.rs): Discord voice opcode payloads, codec negotiation payloads, and stream descriptor helpers
+- [../src/voice_conn/handshake.rs](../src/voice_conn/handshake.rs): handshake receive helpers (Hello/Ready/Session Description) and UDP IP discovery
+- [../src/voice_conn/ws_ops.rs](../src/voice_conn/ws_ops.rs): WS read/write loops and text/binary opcode handling (speaking, video state, DAVE MLS opcodes)
+- [../src/voice_conn/udp_rx.rs](../src/voice_conn/udp_rx.rs): UDP receive loop, frame decrypt orchestration, lazy fallback replay
+- [../src/voice_conn/video_frames.rs](../src/voice_conn/video_frames.rs): inbound video depacketizer state and alternate-payload fallback frame assembly
+- [../src/voice_conn/tx.rs](../src/voice_conn/tx.rs): outbound RTP audio/video packetization and protected RTCP feedback (PLI/FIR)
+- [../src/voice_conn/diagnostics.rs](../src/voice_conn/diagnostics.rs): hex-dump and DAVE-marker helpers for decrypt diagnostics
+
+Media and crypto:
+
+- [../src/dave.rs](../src/dave.rs): DAVE session management, codec-aware encrypt/decrypt helpers, candidate-user decrypt search
+- [../src/transport_crypto.rs](../src/transport_crypto.rs): RTP transport AEAD (AES-256-GCM / XChaCha20-Poly1305 `rtpsize` modes)
+- [../src/rtp.rs](../src/rtp.rs): RTP header build/parse, padding/extension stripping, codec payload types
+- [../src/rtcp.rs](../src/rtcp.rs): protected RTCP packet construction
+- [../src/h264.rs](../src/h264.rs) / [../src/vp8.rs](../src/vp8.rs): codec depacketizers and Annex-B helpers
+- [../src/video_decoder.rs](../src/video_decoder.rs): persistent OpenH264 decoder, YUV→RGB, JPEG encode, frame-diff scoring
+- [../src/video_decode_worker.rs](../src/video_decode_worker.rs): dedicated H264 decode thread, fps gate, `decoded_video_frame` emission, PLI feedback lane
+- [../src/video.rs](../src/video.rs): video stream descriptors, subscriptions, and state helpers
+- [../src/video_state.rs](../src/video_state.rs): remote video state payloads and OP12 announcements
+- [../src/media_sink_wants.rs](../src/media_sink_wants.rs): media sink wants payload construction
+- [../src/audio_pipeline.rs](../src/audio_pipeline.rs): PCM buffering, TTS/music mixing, resampling, Opus encode
+- [../src/capture.rs](../src/capture.rs): per-user capture and speaking state types
 - [../src/music.rs](../src/music.rs): music pipeline subprocess management
-- [../src/video.rs](../src/video.rs): inbound video depacketization and state helpers
+- [../src/stream_publish.rs](../src/stream_publish.rs): outbound Go Live sender pipelines and browser-frame stdin writer
+- [../src/process_unix.rs](../src/process_unix.rs): shell pipelines and process-group signalling
+
+IPC:
+
+- [../src/ipc.rs](../src/ipc.rs): message contracts, prioritized stdout writer lanes, capped stdin reader
 - [../src/ipc_protocol.rs](../src/ipc_protocol.rs): routing inbound IPC into command groups
 - [../src/ipc_router.rs](../src/ipc_router.rs): dispatches routed commands into supervisors
+- [../src/ipc_log_layer.rs](../src/ipc_log_layer.rs): tracing layer forwarding info+ logs over the IPC log lane
+
+## Transport-Owned Mixing Rules
+
+Two pieces of product-flavored policy currently live in the transport plane,
+inside [../src/playback_supervisor.rs](../src/playback_supervisor.rs):
+
+- **TTS-vs-music arbitration** — inbound TTS PCM is rejected while music is
+  actively playing unless music is ducked, and TTS always mixes at full
+  volume over gain-enveloped music.
+- **The pending-music-start state machine** — `music_play` does not start
+  playback immediately; it waits for announcement TTS to arrive, then for a
+  gap in TTS audio, then for the TTS buffer to drain (with prepare/drain
+  safety timeouts) before committing the music start.
+
+These are documented here as transport-owned mixing rules because they decide
+*what the listener hears*, not just how bytes move — which strains the
+"ClankVox stays deterministic, Clanky applies product policy" boundary. They
+are a candidate to move upstream behind explicit duck/hold commands from the
+brain (e.g. `duck_music`, `hold_music_start`/`release_music_start`), leaving
+ClankVox with pure mixing mechanics. Moving them is a cross-repo change
+(clanky-agent owns the command contract) and is deliberately not done yet.
 
 ## Why The Architecture Looks This Way
 
@@ -495,7 +609,8 @@ The normal send path is:
 1. Clanky sends PCM to `clankvox`
 2. `clankvox` buffers and normalizes it for platform send
 3. on each 20ms tick, the next frame is encoded to Opus
-4. DAVE encrypt runs when the session is in encrypted mode
+4. DAVE encrypt runs when the session is in encrypted mode — a frame that
+   fails encryption is dropped, never sent plaintext (fail closed)
 5. transport AEAD encrypt wraps the RTP payload
 6. packet is sent over UDP
 
@@ -661,7 +776,7 @@ Inbound native watch works like this:
    - `user_video_state`
    - `user_video_frame`
    - `user_video_end`
-8. Clanky decodes sampled VP8 keyframes and H264 IDR access units to JPEG and feeds the higher-level screen-watch pipeline
+8. clankvox decodes H264 access units to JPEG in-process (`decoded_video_frame`); Clanky decodes sampled VP8 keyframes to JPEG and feeds the higher-level screen-watch pipeline
 
 The receiver path supports H264 and VP8 receive.
 
@@ -835,7 +950,11 @@ Fixing Go Live DAVE decrypt requires either:
 ## ffmpeg Video Decode
 
 H264 decode is handled entirely in-process by clankvox's persistent OpenH264
-decoder (`video_decoder.rs`). H264 frames do not use ffmpeg.
+decoder (`video_decoder.rs`), running on a dedicated decode thread
+(`video_decode_worker.rs`) behind a bounded drop-oldest frame lane so decode
+and JPEG encode never stall the event loop. The fps gate runs between decode
+and JPEG encode: every frame feeds the decoder's reference state, but
+rate-limited frames skip the encode entirely. H264 frames do not use ffmpeg.
 
 VP8 still uses per-frame ffmpeg decode on the Clanky side. The ffmpeg raw demuxer
 hangs on single-frame input; Clanky works around this by piping through
@@ -858,7 +977,7 @@ Source: `docs/development.md` - https://volpestyle.github.io/docs/clankvox/?doc=
 # clankvox Development
 
 This document is the practical guide for editing and validating the standalone
-Rust media-plane package at `/Users/jamesvolpe/dev/agents/clankvox`.
+Rust media-plane package.
 
 ## Build And Test
 
@@ -867,9 +986,13 @@ From this repo:
 ```sh
 cargo test
 cargo fmt
-OPUS_STATIC=1 OPUS_NO_PKG=1 cargo build --release
+cargo build --release
 pnpm docs:build
 ```
+
+Plain `cargo` commands work because `.cargo/config.toml` pins `OPUS_STATIC`,
+`OPUS_NO_PKG`, and `CMAKE_POLICY_VERSION_MINIMUM=3.5` (cmake >= 4 needs the
+policy floor to build the bundled libopus in `audiopus_sys`).
 
 From the sibling Clanky repo, use the wrapper scripts that build this crate
 through Clanky's expected flags and lockfile:
