@@ -408,7 +408,7 @@ Owns:
 - audio playback commands from Clanky
 - music lifecycle events
 - queue draining on the 20ms tick
-- buffer depth and TTS playback telemetry
+- buffer depth, transport stats, and TTS playback telemetry
 - dispatch of up to four pending stream-publish frames per tick (ffmpeg can
   deliver several access units in one stdout chunk; draining more than one
   per tick keeps RTP timestamps fresh without monopolising the loop)
@@ -452,8 +452,24 @@ Outbound events are also grouped:
   `user_video_end`
 - playback and music lifecycle: `player_state`, `playback_armed`,
   `tts_playback_state`, `music_idle`, `music_error`, `music_gain_reached`
-- telemetry: `buffer_depth`, `tts_buffer_overflow`
+- telemetry: `buffer_depth`, `transport_stats`, `tts_buffer_overflow`
 - structured IPC errors (`error`) and forwarded log records (`log`)
+
+### Telemetry Semantics
+
+`buffer_depth` reports current TTS/music queue depth as samples. It is emitted
+when TTS PCM is enqueued, while playback buffers are non-empty, and when the
+buffers drain so the TypeScript side can track floor state without inferring it
+from speech text.
+
+`transport_stats` reports cumulative transport counters and timing gauges while
+any Discord transport is connected (`voice`, `stream_watch`, or
+`stream_publish`). The playback tick runs every 20ms; `transport_stats` emits
+every 250 ticks, about every 5s, and the cadence counter resets while no
+transport is connected. Counters are cumulative since the ClankVox process
+started. The snapshot includes tick cadence (`total`, `skipped`, `slipEvents`,
+`maxGapMs`), IPC lane drops, inbound audio decrypt/loss/concealment counters,
+inbound video decode/DAVE counters, and outbound RTP/encrypt-failure counters.
 
 ### Writer Lanes
 
