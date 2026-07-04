@@ -15,7 +15,3 @@
 
 - [Audio Pipeline](https://volpestyle.github.io/docs/clankvox/?doc=audio-pipeline): Inbound capture, outbound TTS/music playback, 20ms pacing, telemetry, and floor-control signals.
 - [Go Live](https://volpestyle.github.io/docs/clankvox/?doc=go-live): Native screen watch, self publish, stream discovery, stream roles, DAVE, and video transport.
-
-## Operations
-
-- [Development](https://volpestyle.github.io/docs/clankvox/?doc=development): Build and test commands, logging knobs, high-value edit locations, and Clanky coordination points.
