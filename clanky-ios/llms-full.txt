@@ -15,11 +15,11 @@ Source: `README.md` - https://volpestyle.github.io/docs/clanky-ios/?doc=overview
 ![Clanky iOS showing the live Garden view with the selected Garden tab and ambient herdr worker sprites](apps/mobile/assets/garden/garden-hero.png)
 
 React Native / Expo client for checking and steering Clanky from iPhone and
-iPad. The app talks to the Eve relay that Clanky's headless command host starts
-locally, mirrors the live herdr workspace/tab/pane hierarchy, and sends operator
-input through the same relay contract used by the desktop tools. When the Mac's
-brain is asleep, the app cold-starts it through an always-on supervisor daemon on
-the tailnet, then dials the relay.
+iPad. The app talks to the Eve relay channel inside the running Clanky brain,
+mirrors the live herdr workspace/tab/pane hierarchy, and sends operator input
+through the same relay contract used by the desktop tools. When the Mac's brain
+is asleep, the app cold-starts it through an always-on supervisor daemon on the
+tailnet, then dials the relay.
 
 The old SwiftUI app has been removed. `apps/mobile` is the active app surface;
 the shared TypeScript wire contract lives in the sibling
