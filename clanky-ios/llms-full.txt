@@ -1,6 +1,6 @@
 # Clanky iOS - Full Docs
 
-> Clanky iOS is the native SwiftUI client for attaching to the Eve relay, inspecting herdr state, and steering Clanky work from a phone without inventing a second API.
+> Clanky iOS is the React Native / Expo client for attaching to the Eve relay, inspecting herdr state, and steering Clanky work from iPhone and iPad without inventing a second API.
 
 Generated from the live docs site. Each section below is one page; see the heading and source path for context.
 
@@ -12,211 +12,117 @@ Source: `README.md` - https://volpestyle.github.io/docs/clanky-ios/?doc=overview
 
 # Clanky iOS
 
-Native SwiftUI window for checking and steering Clanky from an iPhone. The app
-talks to the Eve relay that Clanky's headless command host starts locally,
-mirrors the live herdr workspace/tab/pane hierarchy, and sends operator input
-back through the same relay contract used by the desktop tools.
+![Clanky iOS showing the live Garden view with the selected Garden tab and ambient herdr worker sprites](apps/mobile/assets/garden/garden-hero.png)
+
+React Native / Expo client for checking and steering Clanky from iPhone and
+iPad. The app talks to the Eve relay that Clanky's headless command host starts
+locally, mirrors the live herdr workspace/tab/pane hierarchy, and sends operator
+input through the same relay contract used by the desktop tools. When the Mac's
+brain is asleep, the app cold-starts it through an always-on supervisor daemon on
+the tailnet, then dials the relay.
+
+The old SwiftUI app has been removed. `apps/mobile` is the active app surface;
+the shared TypeScript wire contract lives in the sibling
+`../clanky-agent/packages/clanky-contract`; the local Ghostty terminal renderer
+lives in `apps/mobile/modules/expo-ghostty-vt`.
 
 ## What You Can Do
 
 - connect to an Eve relay over local network or Tailscale
-- store the relay URL in app preferences and the relay bearer token in Keychain
-- generate and store an ed25519 SSH lifecycle key in Keychain
-- run `scripts/clanky-up.ts` over SSH in `up`, `status`, and `down` modes
-- inspect herdr workspaces, tabs, panes, agents, and full retained terminal history
-- choose native terminal attach or compatibility mirror mode per app install
-- send text and special keys to a pane through `run` and `keys` relay ops
-- launch and close herdr panes through the Clanky relay
-- start or continue a chat-with-Clanky Eve session
-- run Clanky slash commands through native iOS menus where the command makes sense on mobile
-
-## Native UI Direction
-
-Clanky iOS uses native SwiftUI app chrome around terminal content. Lists,
-forms, toolbars, sheets, multiwindow, Dynamic Type, and system appearance follow
-iPhone and iPad conventions; the terminal surface itself remains black and
-monospaced so ANSI output stays faithful. The bundled mono face is JetBrains
-Mono, matching the local Ghostty `font-family` setting.
-
-Compact-width connected mode uses a Linear-style bottom icon shell. The bottom
-pill routes between Terminal, Canvas, and Settings, a chevron expands a
-larger route/action menu, and the bottom-right agent button presents a
-`clanky` tray. Native Chat is not a peer compact tab; it lives in that agent
-tray as switchable chat tabs that can be scoped to the top-level lead or a
-workspace, so the compact route model stays focused on terminal, canvas, and
-settings. Back lives top-left on pushed routes, with a leading-edge
-swipe-right as an equivalent gesture; top-level destinations switch by tapping
-the bottom bar (top-level page-swipe is removed so it cannot fight the back
-swipe).
-
-iPad layouts keep the regular-width top/sidebar connected chrome, toolbar
-commands, wider workspace surfaces, and readable-width content instead of
-stretching the iPhone bottom-bar flow. The **Terminal** route's root is the
-workspace chooser; opening a workspace embeds the live Herdr tab/pane terminal
-for direct input. **Canvas** is a primary route — a pannable, zoomable agent
-graph (lead→worker delegation edges and workspace/tab containment) that graphs
-every workspace's agents and narrows to one workspace via a scope picker. Pane
-routes own the bottom edge on compact width, so the global bottom shell is
-suppressed only after opening a specific pane route; workspace detail keeps the
-primary shell available.
-
-See `docs/linear-mobile-shell.md` for the route and presentation decision, and
-`docs/agent-graph-canvas.md` for the agent graph architecture.
-
-Modal sheets use Liquid Glass presentation chrome on iOS 26+, with opaque
-true-black fallbacks when Reduce Transparency is enabled. Screen-level content
-surfaces remain flat so terminal output and dense workspace lists stay legible.
-
-Terminal panes have two Settings-selectable stream modes. **Native** is the
-default: it attaches to Herdr's durable terminal id when one is available and
-resizes that server-owned terminal to the iOS grid. **Mirror** keeps the
-compatibility path: the relay asks for Herdr's full retained scrollback when that
-build supports it, otherwise it falls back to capped `recent_unwrapped` output
-instead of surfacing a raw schema error. Terminal output uses the Ghostty VT
-renderer for ANSI color fidelity, with the local retained grid capped at 32,000
-rows for very large buffers. The terminal scroll range is virtualized: UIKit owns
-the full scrollable height while the drawn terminal surface stays viewport-sized
-and paints only visible rows. Terminal panes support pinch-to-zoom text sizing
-that persists as the default across Agent tabs, with a typed Settings percentage,
-matching toolbar controls, and a transient percentage HUD while zooming.
+- cold-start a sleeping Mac by waking the always-on supervisor daemon, then
+  auto-connect once the brain is up
+- store relay config in MMKV with a Keychain backup and keep the relay bearer
+  token in Keychain
+- inspect herdr workspaces, tabs, panes, agents, and terminal output
+- choose native terminal attach or compatibility mirror mode
+- send text and special keys to panes through relay `write` and `keys` ops
+- start or continue Chat-with-Clanky Eve sessions
+- run Clanky slash-command menus natively where the command makes sense on mobile
+- route push notification taps back into the shell
 
 ## Contract Boundary
 
-This repository is the SwiftUI client only. The canonical API is the current
-Clanky implementation in `../clanky`, especially:
+This repository is a client only. The canonical API is the current Clanky agent
+implementation in the sibling checkout that contains `SPEC.md`. In this umbrella
+workspace that is `../clanky-agent`; older standalone layouts may use `../clanky`
+or `../clanky/clanky-agent`.
+
+Inspect that checkout before changing client models or relay behavior, especially:
 
 - `SPEC.md` for the iOS window behavior
 - `scripts/clanky-up.ts` for lifecycle bootstrap output
+- the supervisor lifecycle API (`/lifecycle/up|status|down`) and the shared
+  `@clanky/contract` `lifecycle.ts` / `pairing.ts` shapes for cold-start and pairing
 - `agent/channels/relay.ts` for relay operations and payloads
 - `agent/lib/frontdoor-auth.ts` for bearer-token auth
-- Eve session routes for chat-with-Clanky conversation state
+- Eve session routes for Chat-with-Clanky conversation state
 
 When the app needs new behavior, update or document the Clanky contract first,
-then wire the iOS integration against that contract.
-
-## Mental Model
-
-```mermaid
-flowchart LR
-  phone["Clanky iOS"]
-  network["LAN / Tailscale"]
-  sshd["sshd"]
-  lifecycle["scripts/clanky-up.ts"]
-  commandHost["Clanky command host"]
-  eve["Eve front door"]
-  relay["/relay/ws"]
-  herdr["herdr workspace"]
-  session["/eve/v1/session"]
-
-  phone --> network
-  network --> sshd
-  network --> eve
-  sshd --> lifecycle
-  lifecycle --> herdr
-  lifecycle --> commandHost
-  commandHost --> eve
-  eve --> relay
-  eve --> session
-  relay --> herdr
-```
-
-HTTP URLs are accepted for local/private LAN and Tailscale modes. Custom public
-endpoints should use HTTPS.
-
-## Connect
-
-On first launch, copy the app's SSH public key from the connection screen and
-add it to the Mac user's `~/.ssh/authorized_keys`. Then enter the Mac SSH host,
-user, port, Clanky repo path, relay URL, and relay token.
-
-The app runs this lifecycle command over SSH before attaching to the relay. It
-starts the headless Clanky command host, which owns the Eve server and executes
-slash-command menu flows for the native iOS UI. A visible desktop face can be
-open too, but iOS no longer depends on one:
-
-```bash
-cd <repoPath> && CLANKY_RELAY_TOKEN=<token> node scripts/clanky-up.ts --json
-```
-
-The `status` and `down` lifecycle modes are available from the connected room
-actions sheet.
-
-The app also accepts deep links of the form:
-
-```text
-clanky://connect?relayUrl=http://127.0.0.1:2000&token=...
-```
-
-For local simulator development, leaving SSH host empty still lets the app
-attach to an already-running relay.
+then wire the mobile integration against that contract.
 
 ## Run
 
-```bash
-brew install xcodegen      # if not already installed
-xcodegen generate
-open ClankyIOS.xcodeproj
-```
-
-Command line:
+Install workspace dependencies from the repo root:
 
 ```bash
-pnpm build
-
-# Equivalent raw Xcode invocation:
-xcodebuild -project ClankyIOS.xcodeproj \
-  -scheme ClankyIOS \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  build
+pnpm install
 ```
 
-Quality gate:
+Generate native projects and run the custom Expo dev client:
+
+```bash
+pnpm mobile:prebuild
+pnpm mobile:ios
+pnpm mobile:start
+```
+
+Android uses the same app package and module graph:
+
+```bash
+pnpm mobile:android
+```
+
+The custom dev client is required because Clanky uses native modules Expo Go
+cannot load: Ghostty terminal rendering, Keychain, MMKV, notifications, and
+local authentication.
+
+## Quality Gate
 
 ```bash
 pnpm check
 ```
 
-Simulator terminal smoke test:
+Root `pnpm check` runs the agent alignment check, the sibling contract
+typecheck, the mobile typecheck/lint/import-cycle/Jest gate, and the hosted docs
+build. The mobile-specific gate is:
 
 ```bash
-# Seeded terminal route, useful without a relay.
-scripts/ios-simulator-terminal-smoke.sh
-
-# Live relay route: connects to ../clanky, opens the first Herdr agent pane,
-# captures a screenshot/log, and fails on known SwiftUI terminal freeze faults.
-MODE=live DEVICE_NAME="iPad Pro 13-inch (M5)" scripts/ios-simulator-terminal-smoke.sh
-MODE=live DEVICE_NAME="iPhone 17 Pro" scripts/ios-simulator-terminal-smoke.sh
-
-# Release-build terminal perf smoke; validates required TerminalLatency metrics.
-MODE=perf DEVICE_NAME="iPad Pro 13-inch (M5)" scripts/ios-simulator-terminal-smoke.sh
-
-# Optional xctrace artifact; the script has a watchdog because simulator
-# Instruments recording can hang or reject templates on some Xcode runtimes.
-MODE=perf RECORD_TRACE=1 TRACE_REQUIRED=0 TRACE_TEMPLATE="Time Profiler" \
-  scripts/ios-simulator-terminal-smoke.sh
+pnpm --filter @clanky/mobile run check
 ```
+
+The EAS build profiles, Maestro boot smoke, and non-blocking terminal perf smoke
+are documented in `apps/mobile/QUALITY.md`.
 
 ## Documentation
 
-The hosted docs UI renders this README as the source of truth.
+The hosted docs UI renders this README as the overview.
 
 ```bash
 pnpm docs:dev
 pnpm docs:build
 ```
 
+Architecture docs for the RN app live in `apps/mobile/docs/`, starting with its
+`README.md` (architecture overview and module graph).
+
 ## Structure
 
 ```text
-ClankyIOS/
-  ClankyIOSApp.swift
-  RootView.swift
-  Tokens/
-  Models/
-  Components/
-  Screens/
-  Services/
+apps/
+  docs/             hosted docs site
+  mobile/           React Native / Expo app
+packages/
+  (reserved for future local client packages)
+scripts/
+  check-agents-alignment.sh
 ```
-
-The seeded `AppStore.demo()` workspace uses Clanky/herdr sample data so the
-window hierarchy can be inspected before connecting to a live relay.

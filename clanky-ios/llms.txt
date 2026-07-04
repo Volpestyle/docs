@@ -1,7 +1,7 @@
 # Clanky iOS
 
-> Clanky iOS is the native SwiftUI client for attaching to the Eve relay, inspecting herdr state, and steering Clanky work from a phone without inventing a second API.
+> Clanky iOS is the React Native / Expo client for attaching to the Eve relay, inspecting herdr state, and steering Clanky work from iPhone and iPad without inventing a second API.
 
 ## Start
 
-- [Overview](https://volpestyle.github.io/docs/clanky-ios/?doc=overview): Relay connection, operating model, Clanky contract boundary, run commands, and app structure.
+- [Overview](https://volpestyle.github.io/docs/clanky-ios/?doc=overview): Relay connection, Clanky contract boundary, RN run commands, quality gate, docs, and app structure.
