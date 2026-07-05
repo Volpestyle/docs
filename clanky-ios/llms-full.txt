@@ -22,9 +22,11 @@ is asleep, the app cold-starts it through an always-on supervisor daemon on the
 tailnet, then dials the relay.
 
 The old SwiftUI app has been removed. `apps/mobile` is the active app surface;
-the shared TypeScript wire contract lives in the sibling
-`../clanky-agent/packages/clanky-contract`; the local Ghostty terminal renderer
-lives in `apps/mobile/modules/expo-ghostty-vt`.
+the shared TypeScript wire contract is authored in the sibling
+`../clanky-agent/packages/clanky-contract` and consumed here as the pinned
+GitHub Packages dependency `@volpestyle/clanky-contract` through the
+`@clanky/contract` alias; the local Ghostty terminal renderer lives in
+`apps/mobile/modules/expo-ghostty-vt`.
 
 ## What You Can Do
 
@@ -92,9 +94,9 @@ local authentication.
 pnpm check
 ```
 
-Root `pnpm check` runs the agent alignment check, the sibling contract
-typecheck, the mobile typecheck/lint/import-cycle/Jest gate, and the hosted docs
-build. The mobile-specific gate is:
+Root `pnpm check` runs the agent alignment check, the mobile
+typecheck/lint/import-cycle/Jest gate, and the hosted docs build. The
+mobile-specific gate is:
 
 ```bash
 pnpm --filter @clanky/mobile run check
