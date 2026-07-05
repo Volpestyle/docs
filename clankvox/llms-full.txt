@@ -12,18 +12,23 @@ Source: `README.md` - https://volpestyle.github.io/docs/clankvox/?doc=overview
 
 # ClankVox
 
-ClankVox is Clanky's main Rust package for voice and media transport. It is the
-native media plane Clanky delegates to when a platform needs realtime sockets,
-codec work, packet timing, encryption, or low-level media telemetry.
+ClankVox is Clanky's **presence plane**: the dedicated native media plane that
+puts Clanky where the humans are. Today that means Discord — voice (Opus, E2EE
+via DAVE, real 20ms send pacing) and Go Live streaming and screen share. It is
+the layer Clanky delegates to whenever presence needs realtime sockets, codec
+work, packet timing, encryption, or low-level media telemetry that the Node
+brain is too slow and unequipped to run.
 
-ClankVox handles Discord voice and Go Live, and future platform-specific
-voice/media transports should live at the same layer.
+Discord is the only platform ClankVox targets today, and this repository
+documents that Discord transport. Another platform's media transport would live
+at this same layer, behind the same invariant.
 
-Clanky stays agentic: prompts, settings, gateway control, Realtime sessions,
-tools, Pi delegation, and product behavior. ClankVox stays deterministic:
-platform media transport mechanics, RTP/RTCP, codecs, transport encryption,
-playback pacing, media capture/publish, and IPC. For Discord, that
-means Opus, DAVE, H264/VP8, music PCM, and Go Live watch/publish.
+**The invariant: ClankVox stays deterministic; Clanky applies policy.** Clanky
+stays agentic — prompts, settings, gateway control, Realtime sessions, tools, Pi
+delegation, and product behavior. ClankVox stays deterministic — media transport
+mechanics, RTP/RTCP, codecs, transport encryption, playback pacing, media
+capture/publish, and IPC. For Discord that means Opus, DAVE, H264/VP8, music
+PCM, and Go Live watch/publish.
 
 ## 1. What You Can Do
 
@@ -140,8 +145,9 @@ pnpm smoke:voice:realtime
 
 ## Discord Boundaries
 
-- ClankVox is Clanky's main package for native voice/media transports; Discord
-  voice and Go Live are the implemented transport family.
+- ClankVox is Clanky's native voice/media transport plane; Discord voice and Go
+  Live are the transports it implements, and Discord is the only platform it
+  targets today.
 - Inbound native screen watch is integrated end to end through `stream_watch`.
 - Outbound publish exists and is intentionally narrow: YouTube-backed
   music/video URLs plus browser-session PNG frames, H264 sender transport, and
@@ -159,15 +165,15 @@ Source: `docs/diagram.md` - https://volpestyle.github.io/docs/clankvox/?doc=diag
 # ClankVox Diagram
 
 This is the media-plane map for how `clankvox` fits under Clanky. ClankVox is
-Clanky's main native package for voice and media transport; Discord voice and Go
-Live are the implemented transport family.
+Clanky's presence plane — the native media plane for voice and Go Live. Discord
+is the only platform it targets today, and the roles below are its Discord
+transport.
 
 ```mermaid
 flowchart TB
   user[People in media sessions]
   surfaces[Platform media surfaces]
   discord[Discord voice and stream servers]
-  future[Future platform media transports]
   clanky[Clanky Node runtime]
   ipc[stdin JSON lines<br/>stdout framed IPC]
   vox[clankvox Rust media plane]
@@ -181,14 +187,12 @@ flowchart TB
 
   user <--> surfaces
   surfaces <--> discord
-  surfaces -.-> future
   clanky <--> ipc
   ipc <--> vox
   vox --> family
   family --> voice
   family --> watch
   family --> publish
-  family -.-> future
   voice --> crypto
   watch --> crypto
   publish --> crypto
@@ -225,12 +229,14 @@ Source: `docs/architecture.md` - https://volpestyle.github.io/docs/clankvox/?doc
 
 # clankvox Architecture
 
-This document is the transport/media-plane view of ClankVox.
+This document is the transport/media-plane view of ClankVox, Clanky's presence
+plane — the native media plane that puts Clanky where the humans are.
 
-ClankVox is Clanky's main Rust package for voice and media transport. It
-handles Discord voice and Go Live, and the boundary is intended to hold for
-future platform transports that need native media sockets, codec work, packet
-timing, encryption, or low-level telemetry below Clanky's Node runtime.
+ClankVox is Clanky's Rust media plane for voice and Go Live. Discord is the only
+platform it targets today, and everything below describes that Discord transport:
+the native media sockets, codec work, packet timing, encryption, and low-level
+telemetry that live below Clanky's Node runtime. The invariant across the
+boundary is that ClankVox stays deterministic; Clanky applies policy.
 
 ## Ownership Boundary
 
@@ -317,14 +323,14 @@ where it is the protocol-correct output.
 - reconnect bookkeeping
 
 The important architectural choice is that each Discord transport role has its
-own connection slot and its own DAVE manager. Go Live is not modeled as “extra
-fields on the main voice socket.” Future transport families should follow the
-same shape when their media roles have distinct lifecycle or encryption state.
+own connection slot and its own DAVE manager: a media role with distinct
+lifecycle or encryption state gets its own slot. That is why Go Live is not
+modeled as “extra fields on the main voice socket.”
 
 ## Discord Transport Roles
 
-The roles below are the Discord implementation. They are not the full product
-definition of ClankVox.
+The roles below are ClankVox's transport roles. All three are Discord roles —
+Discord is the only platform ClankVox targets today.
 
 ### `voice`
 
@@ -538,10 +544,9 @@ Songbird-level abstractions were not sufficient because:
 - sender and receiver roles need different codec and announcement behavior
 
 That is why the Discord implementation is a custom transport layer instead of a
-thin wrapper around an off-the-shelf Discord voice library. The same rule should
-apply to future transports: ClankVox owns platform media mechanics when a
-transport needs native timing, codecs, encryption, or telemetry; Clanky owns the
-agent behavior above it.
+thin wrapper around an off-the-shelf Discord voice library. This is the boundary
+the whole plane encodes: ClankVox owns platform media mechanics — native timing,
+codecs, encryption, telemetry — and Clanky owns the agent behavior above it.
 
 ---
 
@@ -683,8 +688,8 @@ That boundary is deliberate. The subprocess should not become a policy engine.
 - audio transport truth is ultimately the subprocess state, not just Clanky-side queued bytes
 - DAVE transitions can temporarily change whether frames are encrypted or passthrough
 - buffer telemetry is operational truth but not durable forever; Clanky still ages stale positive samples on its side
-- future platform transports should expose the same capture/playback truth over
-  IPC instead of moving floor-control policy into `clankvox`
+- capture and playback truth is exposed over IPC so floor-control policy stays
+  in Clanky and never moves into `clankvox`
 
 ---
 
