@@ -24,9 +24,9 @@ Each consumer repo owns only:
 
 Use `defineDocsConfig` in the consumer app to bind page metadata to raw Markdown imports, then render `<DocsApp config={docsConfig} />`.
 
-Use `createAgentWorkspaceSiteLinks()` for the shared Clanky / AgentRoom /
-AgentRoom iOS / ClankVox site registry. The registry lives here so each docs
-site does not duplicate labels, hierarchy, URLs, and relationship metadata.
+Use `createAgentWorkspaceSiteLinks()` for the shared Clanky / ClankVox site
+registry. The registry lives here so each docs site does not duplicate labels,
+hierarchy, URLs, and relationship metadata.
 
 Consumer repos call the shared workflow instead of copying deploy logic. The
 workflow builds docs inside the private source repo, then publishes only the
@@ -37,8 +37,8 @@ jobs:
   docs-pages:
     uses: Volpestyle/docs/.github/workflows/docs-pages.yml@main
     with:
-      docs-base-path: /docs/agent-room/
-      site-slug: agent-room
+      docs-base-path: /docs/clanky/
+      site-slug: clanky
       docs-app-path: apps/docs
       artifact-path: apps/docs/dist
     secrets:
@@ -48,7 +48,7 @@ jobs:
 `DOCS_PUBLISH_KEY` must be an SSH private key whose public key is installed as a
 write deploy key on the public `Volpestyle/docs` repository. This keeps the
 agent repositories private while still hosting one public docs website at
-`https://volpestyle.github.io/docs/`.
+`https://docs.clankie.bot/`.
 
 The shared workflow enforces the public boundary before publish:
 
@@ -63,12 +63,10 @@ repo's docs workflow so the public docs host rebuilds with the latest framework.
 Cross-site links resolve against `site.siteLinks`:
 
 ```md
-[AgentRoom Ecosystem](docs://agent-room-docs/ecosystem)
+[Clanky Ecosystem](docs://clanky-docs/ecosystem)
 [Clanky Start Here](docs://clanky-docs/start-here)
 [ClankVox Overview](docs://clankvox-docs/overview)
-[AgentRoom iOS Overview](docs://agent-room-ios-docs/overview)
 ```
 
 Local Vite dev can override published URLs with env vars such as
-`VITE_DOCS_AGENT_ROOM_URL`, `VITE_DOCS_CLANKY_URL`,
-`VITE_DOCS_AGENT_ROOM_IOS_URL`, and `VITE_DOCS_CLANKVOX_URL`.
+`VITE_DOCS_CLANKY_URL` and `VITE_DOCS_CLANKVOX_URL`.

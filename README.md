@@ -25,22 +25,21 @@ session evidence in private docs.
 Markdown can link across docs sites with the `docs://` scheme:
 
 ```md
-[AgentRoom Ecosystem](docs://agent-room-docs/ecosystem)
+[Clanky Ecosystem](docs://clanky-docs/ecosystem)
 [Clanky Start Here](docs://clanky-docs/start-here)
 [ClankVox Overview](docs://clankvox-docs/overview)
 ```
 
 The shell resolves those links through each site's `siteLinks` config. Published
-docs use the shared GitHub Pages host at `https://volpestyle.github.io/docs/`;
+docs use the shared host at `https://docs.clankie.bot/`;
 local Vite docs can override them with env vars such as
-`VITE_DOCS_AGENT_ROOM_URL`, `VITE_DOCS_CLANKY_URL`,
-`VITE_DOCS_AGENT_ROOM_IOS_URL`, and `VITE_DOCS_CLANKVOX_URL`.
+`VITE_DOCS_CLANKY_URL` and `VITE_DOCS_CLANKVOX_URL`.
 
 ## Hosting
 
 Agent repos stay private. Their docs workflows build from private Markdown and
 publish only generated static output into this public repo's Pages branch under
-paths such as `/docs/clanky/` and `/docs/agent-room/`.
+paths such as `/docs/clanky/` and `/docs/clankvox/`.
 
 By default, `README.md` and Markdown under `docs/` are candidates for public
 documentation, except `docs/private/**`, which is always rejected by the public

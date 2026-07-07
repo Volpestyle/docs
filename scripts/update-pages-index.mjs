@@ -46,13 +46,20 @@ function renderIndex(sites) {
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Agent Workspace Docs</title>
+	<title>Clankie Docs</title>
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23242a2e'/%3E%3C/svg%3E">
 	<style>
 		:root {
-			color-scheme: light dark;
-			font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-			background: #f7f7f4;
-			color: #181917;
+			color-scheme: dark;
+			--bg: #242a2e;
+			--ink: #ece6d7;
+			--muted: #9a9384;
+			--border: #363c41;
+			--border-hover: #565d63;
+			--card: #2a3136;
+			font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			background: var(--bg);
+			color: var(--ink);
 		}
 		body {
 			margin: 0;
@@ -66,14 +73,15 @@ function renderIndex(sites) {
 		}
 		h1 {
 			margin: 0;
+			font-family: ui-monospace, Menlo, monospace;
 			font-size: clamp(2rem, 5vw, 4rem);
 			line-height: 1;
-			letter-spacing: 0;
+			letter-spacing: -0.02em;
 		}
 		p {
 			max-width: 680px;
 			margin: 18px 0 32px;
-			color: #5a5d55;
+			color: var(--muted);
 			font-size: 1.05rem;
 			line-height: 1.6;
 		}
@@ -89,48 +97,29 @@ function renderIndex(sites) {
 			gap: 12px;
 			justify-content: space-between;
 			padding: 18px;
-			border: 1px solid #d9dbd2;
+			border: 1px solid var(--border);
 			border-radius: 8px;
-			background: #ffffff;
+			background: var(--card);
 			color: inherit;
 			text-decoration: none;
 		}
 		.site:hover {
-			border-color: #8a8f7e;
+			border-color: var(--border-hover);
 		}
 		.site span {
 			font-weight: 700;
 			font-size: 1.1rem;
 		}
 		.site small {
-			color: #66695f;
+			color: var(--muted);
 			line-height: 1.45;
-		}
-		@media (prefers-color-scheme: dark) {
-			:root {
-				background: #11130f;
-				color: #f4f5ee;
-			}
-			p {
-				color: #b7baad;
-			}
-			.site {
-				background: #181a15;
-				border-color: #34372e;
-			}
-			.site:hover {
-				border-color: #8f967d;
-			}
-			.site small {
-				color: #b7baad;
-			}
 		}
 	</style>
 </head>
 <body>
 	<main>
-		<h1>Agent Workspace Docs</h1>
-		<p>Unified documentation for the agent workspace, generated from the source docs in each repository.</p>
+		<h1>Clankie</h1>
+		<p>Documentation for Clankie, the swarm visibility and management engine, and its ecosystem.</p>
 		<div class="grid">
 ${cards || "			<p>No docs have been published yet.</p>"}
 		</div>

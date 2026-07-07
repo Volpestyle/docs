@@ -3,7 +3,7 @@ import agentWorkspaceSites from "./agent-workspace-sites.json";
 
 export type AgentWorkspaceDocsSiteId = (typeof agentWorkspaceSites)[number]["id"];
 
-export const agentWorkspaceDocsBaseUrl = "https://volpestyle.github.io/docs";
+export const agentWorkspaceDocsBaseUrl = "https://docs.clankie.bot";
 
 function agentWorkspaceDocsHref(slug: string): string {
 	return `${agentWorkspaceDocsBaseUrl}/${slug}/`;
