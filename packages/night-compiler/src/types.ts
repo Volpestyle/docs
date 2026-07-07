@@ -35,6 +35,16 @@ export type DocsSiteLink = {
 	relationLabel?: string;
 };
 
+export type DocsSiteRegistryEntry = {
+	id: string;
+	slug: string;
+	label: string;
+	description?: string;
+	parentId?: string;
+	relationLabel?: string;
+	metaLabel?: string;
+};
+
 export type DocsSiteInfo = {
 	id: string;
 	title: string;

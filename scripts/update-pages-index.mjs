@@ -2,14 +2,39 @@ import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const publishRoot = process.argv[2];
+const configPath = process.argv[3];
 
 if (!publishRoot) {
-	console.error("Usage: update-pages-index.mjs <publish-root>");
+	console.error("Usage: update-pages-index.mjs <publish-root> [config.json]");
 	process.exit(1);
 }
 
-const sitesRegistryUrl = new URL("../packages/night-compiler/src/agent-workspace-sites.json", import.meta.url);
-const knownSites = JSON.parse(await readFile(sitesRegistryUrl, "utf8"));
+const config = configPath ? JSON.parse(await readFile(configPath, "utf8")) : {};
+
+const defaultLanding = {
+	title: "Documentation",
+	heading: "Documentation",
+	blurb: "Published documentation.",
+	favicon:
+		"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111111'/%3E%3C/svg%3E",
+	palette: {
+		bg: "#111",
+		ink: "#eee",
+		muted: "#999",
+		border: "#333",
+		borderHover: "#555",
+		card: "#1a1a1a",
+	},
+};
+
+const landingConfig = config.landing ?? {};
+const landing = {
+	...defaultLanding,
+	...landingConfig,
+	palette: { ...defaultLanding.palette, ...(landingConfig.palette ?? {}) },
+};
+
+const knownSites = config.sites ?? [];
 
 const entries = await readdir(publishRoot, { withFileTypes: true });
 const publishedSlugs = new Set(
@@ -29,9 +54,9 @@ const unknownSites = [...publishedSlugs]
 
 const sites = [...publishedSites, ...unknownSites];
 
-await writeFile(path.join(publishRoot, "index.html"), renderIndex(sites));
+await writeFile(path.join(publishRoot, "index.html"), renderIndex(sites, landing));
 
-function renderIndex(sites) {
+function renderIndex(sites, landing) {
 	const cards = sites
 		.map(
 			(site) => `<a class="site" href="./${escapeHtml(site.slug)}/">
@@ -41,22 +66,24 @@ function renderIndex(sites) {
 		)
 		.join("\n");
 
+	const { palette } = landing;
+
 	return `<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Clankie Docs</title>
-	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23242a2e'/%3E%3C/svg%3E">
+	<title>${escapeHtml(landing.title)}</title>
+	<link rel="icon" href="${landing.favicon}">
 	<style>
 		:root {
 			color-scheme: dark;
-			--bg: #242a2e;
-			--ink: #ece6d7;
-			--muted: #9a9384;
-			--border: #363c41;
-			--border-hover: #565d63;
-			--card: #2a3136;
+			--bg: ${palette.bg};
+			--ink: ${palette.ink};
+			--muted: ${palette.muted};
+			--border: ${palette.border};
+			--border-hover: ${palette.borderHover};
+			--card: ${palette.card};
 			font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 			background: var(--bg);
 			color: var(--ink);
@@ -118,8 +145,8 @@ function renderIndex(sites) {
 </head>
 <body>
 	<main>
-		<h1>Clankie</h1>
-		<p>Documentation for Clankie, the swarm visibility and management engine, and its ecosystem.</p>
+		<h1>${escapeHtml(landing.heading)}</h1>
+		<p>${escapeHtml(landing.blurb)}</p>
 		<div class="grid">
 ${cards || "			<p>No docs have been published yet.</p>"}
 		</div>

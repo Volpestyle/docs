@@ -1,6 +1,8 @@
 # Night Compiler
 
-Shared React/Vite documentation shell for the Clanky agent ecosystem.
+Shared React/Vite documentation design system. The theme owns the reusable docs
+UI and generic transforms; a consumer supplies the site registry, base URL,
+branding, and deploy.
 
 The package owns the reusable docs UI:
 
@@ -16,57 +18,71 @@ The package owns the reusable docs UI:
 
 Each consumer repo owns only:
 
-- a docs app at its configured `docs-app-path` with `src/docs-manifest.ts`,
-  `src/content.ts`, and `src/main.tsx`
+- a docs app with `src/docs-manifest.ts`, `src/content.ts`, and `src/main.tsx`
 - repo-specific branding assets
-- a thin `.github/workflows/docs-pages.yml` caller that sets the base path,
-  site slug, and any non-default app/artifact paths
+- its own site registry and deploy pipeline
 
 Use `defineDocsConfig` in the consumer app to bind page metadata to raw Markdown imports, then render `<DocsApp config={docsConfig} />`.
 
-Use `createAgentWorkspaceSiteLinks()` for the shared Clanky / ClankVox site
-registry. The registry lives here so each docs site does not duplicate labels,
-hierarchy, URLs, and relationship metadata.
+## Site registry
 
-Consumer repos call the shared workflow instead of copying deploy logic. The
-workflow builds docs inside the private source repo, then publishes only the
-generated static site into the public `Volpestyle/docs` Pages host:
+Use `createDocsSiteLinks({ baseUrl, sites })` to turn a consumer-owned registry
+of `DocsSiteRegistryEntry` values into the `DocsSiteLink[]` the shell renders for
+cross-site navigation. The theme owns the transform; the consumer owns the data,
+so labels, hierarchy, URLs, and relationship metadata live in one place per
+consumer.
 
-```yaml
-jobs:
-  docs-pages:
-    uses: Volpestyle/docs/.github/workflows/docs-pages.yml@main
-    with:
-      docs-base-path: /docs/clanky/
-      site-slug: clanky
-      docs-app-path: apps/docs
-      artifact-path: apps/docs/dist
-    secrets:
-      docs-publish-key: ${{ secrets.DOCS_PUBLISH_KEY }}
+```ts
+import { createDocsSiteLinks } from "@volpestyle/night-compiler";
+
+const siteLinks = createDocsSiteLinks({
+	baseUrl: "https://docs.example.com",
+	sites: [
+		{ id: "core-docs", slug: "core", label: "Core", description: "Core docs." },
+		{
+			id: "plugin-docs",
+			slug: "plugin",
+			label: "Plugin",
+			description: "Plugin module docs.",
+			parentId: "core-docs",
+			relationLabel: "module",
+			metaLabel: "Core submodule",
+		},
+	],
+});
 ```
 
-`DOCS_PUBLISH_KEY` must be an SSH private key whose public key is installed as a
-write deploy key on the public `Volpestyle/docs` repository. This keeps the
-agent repositories private while still hosting one public docs website at
-`https://docs.clankie.bot/`.
+Cross-site links resolve against `site.siteLinks`:
 
-The shared workflow enforces the public boundary before publish:
+```md
+[Core Ecosystem](docs://core-docs/ecosystem)
+[Core Start Here](docs://core-docs/start-here)
+[Plugin Overview](docs://plugin-docs/overview)
+```
+
+Local Vite dev can override published URLs with env vars.
+
+## Deploy
+
+The theme provides the shell components, the public-docs guard scripts, and the
+`scripts/update-pages-index.mjs` root-landing generator. The consumer owns its
+site config and deploy.
+
+`update-pages-index.mjs` takes the publish root and an optional consumer config
+JSON:
+
+```bash
+node scripts/update-pages-index.mjs <publish-root> [config.json]
+```
+
+The config supplies `baseUrl`, the known `sites` (each a `DocsSiteRegistryEntry`
+with `slug`, `title`, and `description`), and a `landing` block for the
+root-index branding (`title`, `heading`, `blurb`, `favicon`, and a `palette`).
+With no config the generator emits a valid index with neutral dark defaults.
+
+The public-docs guard enforces the publish boundary:
 
 - docs apps may raw-import only `README.md` and Markdown files under `docs/`
 - manifests may publish only `README.md` and non-private `docs/**/*.md`
 - generated artifacts fail if they contain source maps, source-code files,
   repository metadata, dependency locks, env files, or high-confidence secrets
-
-Merge shared framework changes here first, then run or dispatch each consumer
-repo's docs workflow so the public docs host rebuilds with the latest framework.
-
-Cross-site links resolve against `site.siteLinks`:
-
-```md
-[Clanky Ecosystem](docs://clanky-docs/ecosystem)
-[Clanky Start Here](docs://clanky-docs/start-here)
-[ClankVox Overview](docs://clankvox-docs/overview)
-```
-
-Local Vite dev can override published URLs with env vars such as
-`VITE_DOCS_CLANKY_URL` and `VITE_DOCS_CLANKVOX_URL`.
