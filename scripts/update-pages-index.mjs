@@ -48,7 +48,7 @@ const unknownSites = [...publishedSlugs]
 	.sort()
 	.map((slug) => ({
 		slug,
-		title: titleFromSlug(slug),
+		label: titleFromSlug(slug),
 		description: "Published documentation.",
 	}));
 
@@ -60,8 +60,8 @@ function renderIndex(sites, landing) {
 	const cards = sites
 		.map(
 			(site) => `<a class="site" href="./${escapeHtml(site.slug)}/">
-		<span>${escapeHtml(site.title)}</span>
-		<small>${escapeHtml(site.description)}</small>
+		<span>${escapeHtml(site.label)}</span>
+		<small>${escapeHtml(site.description ?? "")}</small>
 	</a>`,
 		)
 		.join("\n");
