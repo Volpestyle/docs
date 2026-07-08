@@ -1,10 +1,22 @@
 {
 	"name": "@volpestyle/night-compiler",
 	"version": "0.1.0",
-	"private": true,
 	"type": "module",
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"src",
+		"scripts",
+		"README.md"
+	],
 	"scripts": {
 		"check": "tsc --noEmit -p tsconfig.json"
+	},
+	"bin": {
+		"night-compiler-guard-inputs": "scripts/guard-docs-inputs.mjs",
+		"night-compiler-guard-artifact": "scripts/guard-pages-artifact.mjs",
+		"night-compiler-pages-index": "scripts/update-pages-index.mjs"
 	},
 	"exports": {
 		".": "./src/index.ts",

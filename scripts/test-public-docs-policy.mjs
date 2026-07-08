@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { checkDocsInputs, isAllowedPublicDocsSource as scriptAllows } from "./guard-docs-inputs.mjs";
+import { checkDocsInputs, isAllowedPublicDocsSource as scriptAllows } from "../packages/night-compiler/scripts/guard-docs-inputs.mjs";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceFile = path.join(repoRoot, "packages", "night-compiler", "src", "public-docs-guard.ts");
